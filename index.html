@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>PUBG 커스텀 매치 점수판</title>
+    <title>벽킬내기 점수판</title>
     <style>
         :root {
             --ow-orange: #f06414;
@@ -46,10 +46,16 @@
         .player-stats-row:last-child { border-bottom: none; }
         .player-stats-name { font-weight: bold; color: #fff; }
         .player-stats-score { color: #f06414; font-weight: bold; }
+        .chicken-bonus-text { font-size: 0.85rem; color: #f1c40f; font-weight: bold; margin-top: 8px; display: block; }
 
         .status { color: #00ff00; font-weight: bold; font-size: 1.2rem; }
         .failed { color: #ff3333; font-weight: bold; font-size: 1.2rem; }
         .config-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+        
+        /* TOTAL SCORE 패널 */
+        .total-score-panel { background: #f06414; padding: 10px 20px; border-radius: 8px; text-align: center; box-shadow: 0 4px 10px rgba(240, 100, 20, 0.3); }
+        .total-score-label { font-size: 0.85rem; color: #ffe0cc; display: block; font-weight: bold; }
+        .total-score-value { font-size: 2rem; font-weight: 900; color: #fff; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -87,7 +93,7 @@
             </div>
 
             <div class="box">
-                <h3>3. 팀 배치 <span style="font-size:0.8rem; color:#aaa; font-weight:normal;">(각 팀의 최상단 닉네임이 해당 팀의 검색 기준이 됩니다.)</span></h3>
+                <h3>3. 팀 배치 <span style="font-size:0.8rem; color:#aaa; font-weight:normal;">(각 팀의 최상단 닉네임이 해당 팀의 API 검색 기준이 됩니다.)</span></h3>
                 <div class="teams-container" id="teamsContainer">
                 </div>
             </div>
@@ -95,21 +101,36 @@
             <div class="box">
                 <h3>4. 점수판 룰 설정</h3>
                 <div class="config-row">
-                    <label>킬 점수: <input 입력="number" id="killScore" value="10" style="width: 60px;"></label>
-                    <label>데스 감점: <input 입력="number" id="deathPenalty" value="5" style="width: 60px;"></label>
+                    <label>킬 점수: <input 입력="number" id="killScore" value="1" style="width: 60px;"></label>
+                    <label>데스 감점: <input 입력="number" id="deathPenalty" value="1" style="width: 60px;"></label>
                     <label>목표 점수: <input 입력="number" id="targetScore" value="100" style="width: 80px;"></label>
                     <label>종료 시간: <input 입력="time" id="endTime"></label>
+                </div>
+                <div class="config-row" style="margin-top: 10px; border-top: 1px solid #333; padding-top: 10px;">
+                    <span style="font-size: 0.9rem; color: #aaa; font-weight: bold;"> 치킨 점수 설정:</span>
+                    <label>에/미/태/데/론/비: <input 입력="number" id="chickenA" value="20" style="width: 60px;" title="에란겔, 미라마, 테이고, 데스턴, 론도, 비켄디"></label>
+                    <label>사/카/파: <input 입력="number" id="chickenB" value="15" style="width: 60px;" title="사녹, 카라킨, 파라모"></label>
                 </div>
                 <button class="btn-start" onclick="startGame()">🚀 팀 확정 및 대회 시작</button>
             </div>
         </div>
 
         <div class="box" id="matchSection" style="display:none;">
-            <h3>진행 상황 <span id="clock" style="float:right; color:#ffcc00;"></span></h3>
-            <p id="systemMsg">데이터 갱신 대기 중...</p>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 15px;">
+                <div>
+                    <h3 style="margin-bottom: 5px;">진행 상황 <span id="clock" style="font-size: 1rem; color:#ffcc00; margin-left: 10px;"></span></h3>
+                    <p id="systemMsg" style="margin: 0; font-size: 1.1rem; color: #ccc;">데이터 갱신 대기 중...</p>
+                </div>
+                <div class="total-score-panel">
+                    <span class="total-score-label">전체 팀 합계 점수</span>
+                    <div class="total-score-value" id="totalScoreDisp">TOTAL 0</div>
+                </div>
+            </div>
+            
             <div class="score-board" id="scoreBoard">
             </div>
-            <div style="text-align: center; margin-top: 20px;">
+            
+            <div style="text-align: center; margin-top: 30px;">
                 <button style="background: #e74c3c;" onclick="location.페이지를 새로고침()">🛑 설정 화면으로 돌아가기 (초기화)</button>
             </div>
         </div>
@@ -122,7 +143,13 @@
         let config = {};
         let pollingTimer, clockTimer;
         let isGameFinished = false;
-        let msgTimeout; // 5초 알림을 위한 타이머
+        let msgTimeout;
+
+        // 치킨 점수 구분을 위한 맵 그룹 (API 응답 맵 이름 기준)
+        const mapGroups = {
+            groupA: ['Baltic_Main', 'Desert_Main', 'Tiger_Main', 'Kiki_Main', 'Neon_Main', 'DihorOtok_Main'], // 에란겔, 미라마, 태이고, 데스턴, 론도, 비켄디
+            groupB: ['Savage_Main', 'Summerland_Main', 'Chimera_Main'] // 사녹, 카라킨, 파라모
+        };
 
         window.onload = function() {
             renderTeamBoards();
@@ -134,13 +161,13 @@
             const pool = document.getElementById('waitingPool');
             
             names.forEach(name => {
-                const tag = document.createElement('div');
-                tag.className = 'player-tag';
-                tag.id = 'player-' + Math.random().toString(36).substr(2, 9);
-                tag.draggable = true;
-                tag.ondragstart = drag;
-                tag.innerHTML = `<span class="name-text">${name}</span><span class="remove-btn" onclick="this.parentElement.remove()">✕</span>`;
-                pool.appendChild(tag);
+                const 꼬리표 = document.createElement('div');
+                꼬리표.className = 'player-tag';
+                꼬리표.id = 'player-' + Math.random().toString(36).substr(2, 9);
+                꼬리표.draggable = true;
+                꼬리표.ondragstart = drag;
+                꼬리표.innerHTML = `<span class="name-text">${name}</span><span class="remove-btn" onclick="this.parentElement.remove()">✕</span>`;
+                pool.appendChild(꼬리표);
             });
             inputEl.value = '';
         }
@@ -149,8 +176,8 @@
             const count = parseInt(document.getElementById('teamCountSelect').value);
             const container = document.getElementById('teamsContainer');
             
-            document.querySelectorAll('.team-dropzone .player-tag').forEach(tag => {
-                document.getElementById('waitingPool').appendChild(tag);
+            document.querySelectorAll('.team-dropzone .player-tag').forEach(꼬리표 => {
+                document.getElementById('waitingPool').appendChild(꼬리표);
             });
 
             container.innerHTML = "";
@@ -191,10 +218,10 @@
                     teamsData.push({
                         id: index + 1,
                         name: `TEAM ${index + 1}`,
-                        repPlayer: players[0], // 팀의 첫 번째 인원을 대표로 설정
-                        lastMatchId: "", // 팀별 마지막 매치 ID 저장
-                        // 선수별 스탯 누적을 위한 객체 배열 생성
+                        repPlayer: players[0], // 각 팀의 첫 번째 플레이어를 대표 검색어로 설정
+                        lastMatchId: "", 
                         players: players.map(p => ({ name: p, kills: 0, deaths: 0, score: 0 })),
+                        chickenBonusTotal: 0, // 누적된 치킨 점수
                         score: 0
                     });
                 }
@@ -209,7 +236,9 @@
                 killScore: parseInt(document.getElementById('killScore').value),
                 deathPenalty: parseInt(document.getElementById('deathPenalty').value),
                 targetScore: parseInt(document.getElementById('targetScore').value),
-                endTime: document.getElementById('endTime').value
+                endTime: document.getElementById('endTime').value,
+                chickenA: parseInt(document.getElementById('chickenA').value),
+                chickenB: parseInt(document.getElementById('chickenB').value)
             };
 
             if (!config.endTime) {
@@ -224,13 +253,13 @@
 
             clockTimer = setInterval(checkTimeLimit, 1000);
             fetchData(); 
-            pollingTimer = setInterval(fetchData, 60000); 
+            pollingTimer = setInterval(fetchData, 60000); // 1분마다 호출
         }
 
         function checkTimeLimit() {
             if (isGameFinished) return;
-            const now = new Date();
-            const currentTimeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            const 지금 = new Date();
+            const currentTimeStr = 지금.getHours().toString().padStart(2, '0') + ":" + 지금.getMinutes().toString().padStart(2, '0');
             document.getElementById('clock').innerText = "현재 시간: " + currentTimeStr + " / 종료 시간: " + config.endTime;
 
             if (currentTimeStr >= config.endTime) {
@@ -238,10 +267,9 @@
             }
         }
 
-        // 5초 알림 표시 함수
         function showTemporaryMessage(msg) {
             const msgEl = document.getElementById('systemMsg');
-            msgEl.innerHTML = `<span style="color:#f1c40f;">${msg}</span>`;
+            msgEl.innerHTML = `<span style="color:#f1c40f; font-weight:bold;">${msg}</span>`;
             
             clearTimeout(msgTimeout);
             msgTimeout = setTimeout(() => {
@@ -256,7 +284,6 @@
             
             let updatedTeams = [];
 
-            // 각 팀별 대표 닉네임으로 전적 조회
             for (let team of teamsData) {
                 if (!team.repPlayer) continue;
                 try {
@@ -265,38 +292,57 @@
 
                     if (data.status === "new_match") {
                         team.lastMatchId = data.matchId;
-                        calculateScores(team, data.stats);
+                        const matchMap = data.map || ""; // Vercel에서 map 정보가 넘어와야 함
+                        calculateScores(team, data.stats, matchMap);
                         updatedTeams.push(team.name);
                     }
                 } catch (error) {
-                    console.error(`${team.name} 데이터 호출 실패:`, error);
+                    console.error(`${team.name} 데이터 호출 중 문제 발생:`, error);
                 }
             }
 
-            // 업데이트된 팀이 있으면 5초 알림 표시
             if (updatedTeams.length > 0) {
                 showTemporaryMessage(`${updatedTeams.join(', ')} 의 매치 종료! 최신 점수를 반영했습니다.`);
             }
         }
 
-        // 개별 팀의 스탯 누적 및 계산
-        function calculateScores(team, stats) {
+        function calculateScores(team, stats, matchMap) {
+            let teamWonMatch = false;
+
             team.players.forEach(playerObj => {
                 const matchedKey = Object.keys(stats).find(key => key.toLowerCase() === playerObj.name.toLowerCase());
                 if (matchedKey) {
-                    const k = stats[matchedKey].kills;
-                    const d = stats[matchedKey].deaths;
-                    const earned = (k * config.killScore) - (d * config.deathPenalty);
+                    const s = stats[matchedKey];
+                    const earned = (s.kills * config.killScore) - (s.deaths * config.deathPenalty);
                     
-                    // 누적 데이터 저장
-                    playerObj.kills += k;
-                    playerObj.deaths += d;
+                    playerObj.kills += s.kills;
+                    playerObj.deaths += s.deaths;
                     playerObj.score += earned;
-                    
-                    // 팀 총점 누적
                     team.score += earned;
+
+                    // 해당 팀의 인원 중 1등 기록이 있다면 팀 전체 승리로 간주
+                    if (s.isWinner) {
+                        teamWonMatch = true;
+                    }
                 }
             });
+
+            // 치킨 점수 합산
+            if (teamWonMatch) {
+                let chickenBonus = 0;
+                if (mapGroups.groupA.includes(matchMap)) {
+                    chickenBonus = config.chickenA;
+                } else if (mapGroups.groupB.includes(matchMap)) {
+                    chickenBonus = config.chickenB;
+                } else {
+                    // 맵 그룹에 속하지 않거나 맵 정보가 없을 경우 기본값으로 A그룹 점수 부여 (예외 처리)
+                    chickenBonus = config.chickenA; 
+                }
+                
+                team.chickenBonusTotal += chickenBonus;
+                team.score += chickenBonus;
+            }
+
             renderLiveScoreBoard();
             checkTargetScore();
         }
@@ -313,9 +359,9 @@
             clearTimeout(msgTimeout);
             
             if (isSuccess) {
-                document.getElementById('systemMsg').innerHTML = `<span class="status">🎉 성공! ${winnerName} 팀이 목표 점수를 달성했습니다!</span>`;
+                document.getElementById('systemMsg').innerHTML = `<span class="status"> 대회 종료! ${winnerName} 팀이 목표 점수를 달성했습니다!</span>`;
             } else {
-                document.getElementById('systemMsg').innerHTML = `<span class="failed">❌ 시간 종료! 목표 점수에 도달한 팀이 없습니다.</span>`;
+                document.getElementById('systemMsg').innerHTML = `<span class="failed"> 시간 종료! 목표 점수에 도달한 팀이 없습니다.</span>`;
             }
         }
 
@@ -323,8 +369,11 @@
             const board = document.getElementById('scoreBoard');
             board.innerHTML = "";
             
+            let totalMatchScore = 0;
+
             teamsData.forEach(team => {
-                // 팀원 개별 전적 HTML 생성
+                totalMatchScore += team.score;
+                
                 let playersHtml = team.players.map(p => `
                     <div class="player-stats-row">
                         <span class="player-stats-name">${p.name}</span>
@@ -332,16 +381,25 @@
                     </div>
                 `).join('');
 
+                // 치킨 점수가 있다면 추가 표시
+                let chickenHtml = "";
+                if (team.chickenBonusTotal > 0) {
+                    chickenHtml = `<span class="chicken-bonus-text">+ 치킨 점수: ${team.chickenBonusTotal}점</span>`;
+                }
+
                 board.innerHTML += `
                     <div class="live-team-card">
                         <h4>${team.name}</h4>
                         <h2>${team.score} 점</h2>
                         <div style="margin-top: 15px; text-align: left; background: #1a1c20; padding: 10px; border-radius: 8px;">
                             ${playersHtml}
+                            ${chickenHtml}
                         </div>
                     </div>
                 `;
             });
+
+            document.getElementById('totalScoreDisp').innerText = `TOTAL ${totalMatchScore}`;
         }
     </script>
 </body>
