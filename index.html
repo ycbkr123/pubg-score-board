@@ -20,11 +20,11 @@
         
         <div class="box" id="setupSection">
             <h3>설정</h3>
-            <label>대표 유저 닉네임 (1명 검색용): <input type="text" id="repPlayer" value="PlayerName1"></label><br>
-            <label>킬 당 점수: <input type="number" id="killScore" value="10"></label>
-            <label>데스 당 감점: <input type="number" id="deathPenalty" value="5"></label><br>
-            <label>목표 점수: <input type="number" id="targetScore" value="100"></label><br>
-            <label>종료 시간 (HH:MM): <input type="time" id="endTime"></label><br><br>
+            <label>대표 유저 닉네임 (1명 검색용): <input 입력="text" id="repPlayer" value="PlayerName1"></label><br>
+            <label>킬 당 점수: <input 입력="number" id="killScore" value="10"></label>
+            <label>데스 당 감점: <input 입력="number" id="deathPenalty" value="5"></label><br>
+            <label>목표 점수: <input 입력="number" id="targetScore" value="100"></label><br>
+            <label>종료 시간 (HH:MM): <input 입력="time" id="endTime"></label><br><br>
             <button onclick="startGame()">대회 시작</button>
         </div>
 
@@ -38,7 +38,7 @@
 
     <script>
         // Vercel 배포 후 발급받은 URL로 변경하세요! (예: https://my-pubg-api.vercel.app)
-        const BACKEND_URL = "YOUR_VERCEL_APP_URL_HERE/api"; 
+        const BACKEND_URL = "pubg-score-board.vercel.app/api"; 
         
         // 팀 설정 (테스트를 위해 임시로 2팀만 작성. 실제 사용 시 4팀까지 추가하세요)
         const teams = [
@@ -80,8 +80,8 @@
         function checkTimeLimit() {
             if (isGameFinished) return;
             
-            const now = new Date();
-            const currentTimeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            const 지금 = new Date();
+            const currentTimeStr = 지금.getHours().toString().padStart(2, '0') + ":" + 지금.getMinutes().toString().padStart(2, '0');
             document.getElementById('clock').innerText = "현재 시간: " + currentTimeStr + " / 종료 시간: " + config.endTime;
 
             if (currentTimeStr >= config.endTime) {
