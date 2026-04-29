@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>벽킬내기 점수판</title>
+    <title>코렛트 벽킬내기</title>
     <style>
         :root {
             --ow-orange: #f06414;
@@ -34,15 +34,17 @@
         .team-dropzone { flex-grow: 1; background: #121417; border: 1px dashed #444; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
 
         .score-board { display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
-        .live-team-card { background: #222; padding: 20px; width: 280px; text-align: center; border-radius: 10px; border-top: 8px solid #f1c40f; box-shadow: 0 5px 15px rgba(0,0,0,0.5); margin-bottom: 15px; }
+        .live-team-card { position: relative; background: #222; padding: 20px; width: 280px; text-align: center; border-radius: 10px; border-top: 8px solid #f1c40f; box-shadow: 0 5px 15px rgba(0,0,0,0.5); overflow: hidden; }
         .live-team-card h4 { margin: 0 0 10px 0; font-size: 1.3rem; }
         .live-team-card h2 { color: #f1c40f; font-size: 2.5rem; margin: 10px 0; border: none; padding: 0; }
         
-        .player-stats-row { display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding: 6px 0; font-size: 0.9rem; color: #ccc; text-align: left; }
+        .player-stats-row { display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding: 6px 0; font-size: 0.9rem; color: #ccc; }
         .player-stats-row:last-child { border-bottom: none; }
         .player-stats-name { font-weight: bold; color: #fff; }
         .player-stats-score { color: #f06414; font-weight: bold; }
-        .chicken-bonus-text { font-size: 0.85rem; color: #f1c40f; font-weight: bold; margin-top: 8px; display: block; }
+        
+        /* 치킨 카운트 스타일 */
+        .chicken-bonus-text { font-size: 0.9rem; color: #f1c40f; font-weight: bold; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #555; display: block; text-align: center; }
 
         .status { color: #00ff00; font-weight: bold; font-size: 1.2rem; }
         .failed { color: #ff3333; font-weight: bold; font-size: 1.2rem; }
@@ -55,7 +57,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>벽킬내기 점수판</h2>
+        <h2>코렛트 벽킬내기</h2>
         
         <div id="builderSection">
             <div class="setup-grid">
@@ -102,8 +104,8 @@
                     <label>종료 시간: <input 입력="time" id="endTime"></label>
                 </div>
                 <div class="config-row" style="margin-top: 10px; border-top: 1px solid #333; padding-top: 10px;">
-                    <span style="font-size: 0.9rem; color: #aaa; font-weight: bold;">🍗 치킨 점수 설정:</span>
-                    <label>에/미/태/데/론/비: <input 입력="number" id="chickenA" value="20" style="width: 60px;" title="에란겔, 미라마, 테이고, 데스턴, 론도, 비켄디"></label>
+                    <span style="font-size: 0.9rem; color: #aaa; font-weight: bold;"> 🍗 치킨 점수 설정:</span>
+                    <label>에/미/태/데/론/비: <input 입력="number" id="chickenA" value="20" style="width: 60px;" title="에란겔, 미라마, 태이고, 데스턴, 론도, 비켄디"></label>
                     <label>사/카/파: <input 입력="number" id="chickenB" value="15" style="width: 60px;" title="사녹, 카라킨, 파라모"></label>
                 </div>
                 <button class="btn-start" onclick="startGame()">🚀 팀 확정 및 대회 시작</button>
@@ -114,7 +116,7 @@
             <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 15px;">
                 <div>
                     <h3 style="margin-bottom: 5px;">진행 상황 <span id="clock" style="font-size: 1rem; color:#ffcc00; margin-left: 10px;"></span></h3>
-                    <p id="systemMsg" style="margin: 0; font-size: 1.1rem; color: #ccc;">데이터 갱신 대기 중...</p>
+                    <p id="systemMsg" style="margin: 0; font-size: 1.1rem; color: #ccc;">초기화 중...</p>
                 </div>
                 <div class="total-score-panel">
                     <span class="total-score-label">전체 팀 합계 점수</span>
@@ -127,7 +129,7 @@
             
             <div style="text-align: center; margin-top: 30px;">
                 <button style="background: #9b59b6; margin-right: 10px;" onclick="openPipWindow()">🪟 미니 창(PiP) 띄우기</button>
-                <button style="background: #e74c3c;" onclick="location.페이지를 새로고침()"> 설정 화면으로 돌아가기 (초기화)</button>
+                <button style="background: #e74c3c;" onclick="location.페이지를 새로고침()">🛑 설정 화면으로 돌아가기 (초기화)</button>
             </div>
         </div>
     </div>
@@ -141,6 +143,7 @@
         let isGameFinished = false;
         let msgTimeout;
         let pipWindow = null;
+        let isFirstSync = true; // 대회 시작 이전 전적을 거르기 위한 변수
 
         const mapGroups = {
             groupA: ['Baltic_Main', 'Desert_Main', 'Tiger_Main', 'Kiki_Main', 'Neon_Main', 'DihorOtok_Main'],
@@ -217,8 +220,10 @@
                         repPlayer: players[0],
                         lastMatchId: "", 
                         players: players.map(p => ({ name: p, kills: 0, deaths: 0, score: 0 })),
+                        chickenCount: 0, // 누적 1등 횟수
                         chickenBonusTotal: 0,
-                        score: 0
+                        score: 0,
+                        latestUpdate: null // PiP 애니메이션용 최신 업데이트 정보
                     });
                 }
             });
@@ -245,9 +250,13 @@
             document.getElementById('builderSection').style.display = 'none';
             document.getElementById('matchSection').style.display = 'block';
             
+            isFirstSync = true;
+            document.getElementById('systemMsg').innerHTML = `🔄 현재 시점의 기준 전적을 설정 중입니다...`;
+            
             renderLiveScoreBoard();
-
             clockTimer = setInterval(checkTimeLimit, 1000);
+            
+            // 시작과 동시에 기준점(Baseline) 세팅을 위한 1회 통신
             fetchData(); 
             pollingTimer = setInterval(fetchData, 60000); 
         }
@@ -261,7 +270,6 @@
             if (currentTimeStr >= config.endTime) {
                 endGame(false);
             }
-            // PiP 창이 있다면 시간 동기화
             if (pipWindow) renderLiveScoreBoard();
         }
 
@@ -280,12 +288,22 @@
         async function fetchData() {
             if (isGameFinished) return;
             let updatedTeams = [];
+            let fetchedAny = false;
+
             for (let team of teamsData) {
                 if (!team.repPlayer) continue;
                 try {
                     const res = await fetch(`${BACKEND_URL}?player=${team.repPlayer}&lastMatch=${team.lastMatchId}`);
                     const data = await res.json();
-                    if (data.status === "new_match") {
+                    
+                    fetchedAny = true;
+
+                    // 첫 통신 시: 점수를 계산하지 않고 시작점(Match ID)만 저장합니다.
+                    if (isFirstSync) {
+                        team.lastMatchId = data.matchId || ""; 
+                    } 
+                    // 두 번째 이후 통신: 새로운 매치가 잡혔을 때만 계산
+                    else if (data.status === "new_match") {
                         team.lastMatchId = data.matchId;
                         const matchMap = data.map || ""; 
                         calculateScores(team, data.stats, matchMap);
@@ -293,16 +311,29 @@
                     }
                 } catch (error) { console.error(error); }
             }
-            if (updatedTeams.length > 0) showTemporaryMessage(`${updatedTeams.join(', ')} 의 매치 종료! 최신 점수를 반영했습니다.`);
+
+            // 기준점 세팅 완료 처리
+            if (isFirstSync && fetchedAny) {
+                isFirstSync = false;
+                document.getElementById('systemMsg').innerHTML = `<span style="color:#00ff00;">✅ 기준 전적 수집 완료. 새로운 전적을 대기합니다.</span>`;
+            } else if (!isFirstSync && updatedTeams.length > 0) {
+                showTemporaryMessage(`${updatedTeams.join(', ')} 의 매치 종료! 최신 점수를 반영했습니다.`);
+            }
         }
 
         function calculateScores(team, stats, matchMap) {
             let teamWonMatch = false;
+            let teamBestRank = 99; // 현재 매치 최고 등수 계산용
+            let oldTotalScore = team.score; // 점수 변동량 계산용
+
             team.players.forEach(playerObj => {
                 const matchedKey = Object.keys(stats).find(key => key.toLowerCase() === playerObj.name.toLowerCase());
                 if (matchedKey) {
                     const s = stats[matchedKey];
                     const earned = (s.kills * config.killScore) - (s.deaths * config.deathPenalty);
+                    
+                    if (s.winPlace && s.winPlace < teamBestRank) teamBestRank = s.winPlace;
+
                     playerObj.kills += s.kills;
                     playerObj.deaths += s.deaths;
                     playerObj.score += earned;
@@ -310,11 +341,18 @@
                     if (s.isWinner) teamWonMatch = true;
                 }
             });
+
             if (teamWonMatch) {
+                team.chickenCount += 1;
                 let chickenBonus = mapGroups.groupB.includes(matchMap) ? config.chickenB : config.chickenA;
                 team.chickenBonusTotal += chickenBonus;
                 team.score += chickenBonus;
             }
+
+            // 이번 라운드 변경 사항 애니메이션용 데이터 저장
+            let scoreDiff = team.score - oldTotalScore;
+            team.latestUpdate = { rank: teamBestRank, diff: scoreDiff, timestamp: Date.지금() };
+
             renderLiveScoreBoard();
             checkTargetScore();
         }
@@ -330,8 +368,8 @@
             clearInterval(clockTimer);
             clearTimeout(msgTimeout);
             const msgEl = document.getElementById('systemMsg');
-            if (isSuccess) msgEl.innerHTML = `<span class="status"> 대회 종료! ${winnerName} 팀이 목표 점수를 달성했습니다!</span>`;
-            else msgEl.innerHTML = `<span class="failed"> 시간 종료! 목표 점수에 도달한 팀이 없습니다.</span>`;
+            if (isSuccess) msgEl.innerHTML = `<span class="status">🎉 대회 종료! ${winnerName} 팀이 목표 점수를 달성했습니다!</span>`;
+            else msgEl.innerHTML = `<span class="failed">⏰ 시간 종료! 목표 점수에 도달한 팀이 없습니다.</span>`;
             if (pipWindow) renderLiveScoreBoard();
         }
 
@@ -340,20 +378,47 @@
                 alert("PiP 기능을 지원하지 않는 브라우저입니다.");
                 return;
             }
-            pipWindow = await documentPictureInPicture.requestWindow({ width: 340, height: 550 });
+            pipWindow = await documentPictureInPicture.requestWindow({ width: 340, height: 600 });
+            
+            // 애니메이션을 위한 CSS 주입
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes popFade {
+                    0% { transform: scale(0.5); opacity: 0; }
+                    10% { transform: scale(1.1); opacity: 1; pointer-events: auto; }
+                    20% { transform: scale(1); opacity: 1; pointer-events: auto; }
+                    80% { transform: scale(1); opacity: 1; pointer-events: auto; }
+                    100% { transform: scale(0.9); opacity: 0; pointer-events: none; display: none; }
+                }
+                .pip-update-anim {
+                    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(0, 0, 0, 0.9);
+                    border-radius: 10px;
+                    display: flex; flex-direction: column; justify-content: center; align-items: center;
+                    animation: popFade 5s forwards;
+                    z-index: 10;
+                }
+                .pip-rank { font-size: 3.5rem; color: #f1c40f; font-weight: 900; text-shadow: 0 0 15px rgba(241, 196, 15, 0.6); margin-bottom: 5px; line-height: 1; }
+                .pip-diff { font-size: 2rem; color: #2ecc71; font-weight: bold; }
+                .live-team-card { position: relative; }
+            `;
+            pipWindow.document.head.appendChild(style);
+
             [...document.styleSheets].forEach(styleSheet => {
                 try {
                     const cssRules = [...styleSheet.cssRules].map(rule => rule.cssText).join('');
-                    const style = document.createElement('style');
-                    style.textContent = cssRules;
-                    pipWindow.document.head.appendChild(style);
+                    const s = document.createElement('style');
+                    s.textContent = cssRules;
+                    pipWindow.document.head.appendChild(s);
                 } catch (e) {}
             });
+
             pipWindow.document.body.style.background = "#121417";
             const container = document.createElement('div');
             container.id = 'pipContent';
             pipWindow.document.body.appendChild(container);
             pipWindow.addEventListener("pagehide", () => { pipWindow = null; });
+            
             renderLiveScoreBoard();
         }
 
@@ -371,13 +436,31 @@
                         <span>${p.kills}K / ${p.deaths}D <span class="player-stats-score">(${p.score}점)</span></span>
                     </div>
                 `).join('');
-                let chickenHtml = team.chickenBonusTotal > 0 ? `<span class="chicken-bonus-text">+ 치킨 점수: ${team.chickenBonusTotal}점</span>` : "";
+                
+                // 팀 치킨 카운트 하단 표시
+                let chickenHtml = `<span class="chicken-bonus-text">총 ${team.chickenCount}치킨 (보너스: ${team.chickenBonusTotal}점)</span>`;
+                
+                // PiP 전용 애니메이션 오버레이 생성 (5초 이내 업데이트가 있었을 경우)
+                let pipAnimOverlay = "";
+                if (team.latestUpdate && (Date.지금() - team.latestUpdate.timestamp < 5000)) {
+                    let sign = team.latestUpdate.diff >= 0 ? "+" : "";
+                    let diffColor = team.latestUpdate.diff >= 0 ? "#2ecc71" : "#e74c3c";
+                    pipAnimOverlay = `
+                        <div class="pip-update-anim">
+                            <div class="pip-rank">${team.latestUpdate.rank}등!</div>
+                            <div class="pip-diff" style="color: ${diffColor};">${sign}${team.latestUpdate.diff}점</div>
+                        </div>
+                    `;
+                }
+
                 generatedHtml += `
                     <div class="live-team-card">
+                        ${pipAnimOverlay}
                         <h4>${team.name}</h4>
                         <h2>${team.score} 점</h2>
                         <div style="margin-top: 15px; text-align: left; background: #1a1c20; padding: 10px; border-radius: 8px;">
-                            ${playersHtml}${chickenHtml}
+                            ${playersHtml}
+                            ${chickenHtml}
                         </div>
                     </div>
                 `;
