@@ -7,14 +7,23 @@
         :root {
             --ow-orange: #f06414;
             --bg-body: #121417;
-            --bg-panel: #1e2126;
+            --bg-panel: rgba(30, 33, 38, 0.9); /* 배경이 살짝 비치도록 수정 */
             --border-color: #383e47;
         }
-        body { font-family: 'Malgun Gothic', 'Pretendard', sans-serif; background: var(--bg-body); color: white; padding: 20px; margin: 0; }
+        body { 
+            font-family: 'Malgun Gothic', 'Pretendard', sans-serif; 
+            /* 전체 배경색 진한보라 + 연한보라 그라데이션 적용 */
+            background: linear-gradient(135deg, #704585, #CBB1D4);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: white; 
+            padding: 20px; 
+            margin: 0; 
+        }
         .container { max-width: 1200px; margin: 0 auto; }
         
-        .box { background: var(--bg-panel); padding: 20px; margin-bottom: 20px; border-radius: 12px; border: 1px solid var(--border-color); }
-        h2 { margin-top: 0; color: #fff; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+        .box { background: var(--bg-panel); padding: 20px; margin-bottom: 20px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        h2 { margin-top: 0; color: #fff; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
         h3 { margin-top: 0; color: var(--ow-orange); }
         input, select { padding: 10px; margin: 5px; background: #121417; border: 1px solid var(--border-color); color: white; border-radius: 6px; }
         button { padding: 10px 20px; margin: 5px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
@@ -23,18 +32,18 @@
         
         .setup-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
         .input-group { display: flex; align-items: center; gap: 5px; }
-        #waitingPool { min-height: 60px; background: #121417; border: 1px dashed #555; border-radius: 8px; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+        #waitingPool { min-height: 60px; background: rgba(18, 20, 23, 0.8); border: 1px dashed #555; border-radius: 8px; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
         
         .player-tag { background: #ffffff; color: #000; padding: 6px 14px; border-radius: 5px; font-weight: bold; cursor: grab; display: inline-flex; align-items: center; box-shadow: 0 3px 5px rgba(0,0,0,0.3); }
         .remove-btn { color: #ff4d4d; font-size: 0.85rem; cursor: pointer; margin-left: 8px; }
         
         .teams-container { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 20px; justify-content: center; }
-        .team-card { background: #2a2e35; border-radius: 10px; padding: 15px; width: 250px; border-top: 6px solid #3498db; min-height: 150px; display: flex; flex-direction: column; }
+        .team-card { background: rgba(42, 46, 53, 0.9); border-radius: 10px; padding: 15px; width: 250px; border-top: 6px solid #3498db; min-height: 150px; display: flex; flex-direction: column; }
         .team-title { text-align: center; font-weight: bold; font-size: 1.2rem; margin-bottom: 15px; color: #fff; }
-        .team-dropzone { flex-grow: 1; background: #121417; border: 1px dashed #444; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .team-dropzone { flex-grow: 1; background: rgba(18, 20, 23, 0.6); border: 1px dashed #444; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
 
         .score-board { display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
-        .live-team-card { position: relative; background: #222; padding: 20px; width: 280px; text-align: center; border-radius: 10px; border-top: 8px solid #f1c40f; box-shadow: 0 5px 15px rgba(0,0,0,0.5); overflow: hidden; }
+        .live-team-card { position: relative; background: rgba(34, 34, 34, 0.95); padding: 20px; width: 280px; text-align: center; border-radius: 10px; border-top: 8px solid #f1c40f; box-shadow: 0 5px 15px rgba(0,0,0,0.5); overflow: hidden; }
         .live-team-card h4 { margin: 0 0 10px 0; font-size: 1.3rem; }
         .live-team-card h2 { color: #f1c40f; font-size: 2.5rem; margin: 10px 0; border: none; padding: 0; }
         
@@ -77,7 +86,7 @@
                         </select>
                     </div>
                     <div class="input-group" style="margin-top: 10px;">
-                        <input 입력="text" id="streamerInput" placeholder="닉네임 (쉼표로 구분)" style="flex-grow: 1;" onkeypress="if(event.key==='Enter') addStreamers()">
+                        <input type="text" id="streamerInput" placeholder="닉네임 (쉼표로 구분)" style="flex-grow: 1;" onkeypress="if(event.key==='Enter') addStreamers()">
                         <button onclick="addStreamers()">추가</button>
                     </div>
                 </div>
@@ -90,7 +99,7 @@
             </div>
 
             <div class="box">
-                <h3>3. 팀 배치 <span style="font-size:0.8rem; color:#aaa; font-weight:normal;">(각 팀의 최상단 닉네임이 해당 팀의 API 검색 기준이 됩니다.)</span></h3>
+                <h3>3. 팀 배치 <span style="font-size:0.8rem; color:#ccc; font-weight:normal;">(각 팀의 최상단 닉네임이 해당 팀의 API 검색 기준이 됩니다.)</span></h3>
                 <div class="teams-container" id="teamsContainer">
                 </div>
             </div>
@@ -98,22 +107,22 @@
             <div class="box">
                 <h3>4. 점수판 룰 설정</h3>
                 <div class="config-row">
-                    <label>킬 점수: <input 입력="number" id="killScore" value="1" style="width: 60px;"></label>
-                    <label>데스 감점: <input 입력="number" id="deathPenalty" value="1" style="width: 60px;"></label>
-                    <label>목표 점수: <input 입력="number" id="targetScore" value="100" style="width: 80px;"></label>
-                    <label>종료 시간: <input 입력="time" id="endTime"></label>
+                    <label>킬 점수: <input type="number" id="killScore" value="1" style="width: 60px;"></label>
+                    <label>데스 감점: <input type="number" id="deathPenalty" value="1" style="width: 60px;"></label>
+                    <label>목표 점수: <input type="number" id="targetScore" value="100" style="width: 80px;"></label>
+                    <label>종료 시간: <input type="time" id="endTime"></label>
                 </div>
-                <div class="config-row" style="margin-top: 10px; border-top: 1px solid #333; padding-top: 10px;">
-                    <span style="font-size: 0.9rem; color: #aaa; font-weight: bold;"> 🍗 치킨 점수 설정:</span>
-                    <label>에/미/태/데/론/비: <input 입력="number" id="chickenA" value="20" style="width: 60px;" title="에란겔, 미라마, 태이고, 데스턴, 론도, 비켄디"></label>
-                    <label>사/카/파: <input 입력="number" id="chickenB" value="15" style="width: 60px;" title="사녹, 카라킨, 파라모"></label>
+                <div class="config-row" style="margin-top: 10px; border-top: 1px solid #555; padding-top: 10px;">
+                    <span style="font-size: 0.9rem; color: #ddd; font-weight: bold;"> 🍗 치킨 점수 설정:</span>
+                    <label>에/미/태/데/론/비: <input type="number" id="chickenA" value="20" style="width: 60px;" title="에란겔, 미라마, 태이고, 데스턴, 론도, 비켄디"></label>
+                    <label>사/카/파: <input type="number" id="chickenB" value="15" style="width: 60px;" title="사녹, 카라킨, 파라모"></label>
                 </div>
                 <button class="btn-start" onclick="startGame()">🚀 팀 확정 및 대회 시작</button>
             </div>
         </div>
 
         <div class="box" id="matchSection" style="display:none;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #555; padding-bottom: 15px; margin-bottom: 15px;">
                 <div>
                     <h3 style="margin-bottom: 5px;">진행 상황 <span id="clock" style="font-size: 1rem; color:#ffcc00; margin-left: 10px;"></span></h3>
                     <p id="systemMsg" style="margin: 0; font-size: 1.1rem; color: #ccc;">초기화 중...</p>
@@ -129,7 +138,7 @@
             
             <div style="text-align: center; margin-top: 30px;">
                 <button style="background: #9b59b6; margin-right: 10px;" onclick="openPipWindow()">🪟 미니 창(PiP) 띄우기</button>
-                <button style="background: #e74c3c;" onclick="location.페이지를 새로고침()">🛑 설정 화면으로 돌아가기 (초기화)</button>
+                <button style="background: #e74c3c;" onclick="location.reload()">🛑 설정 화면으로 돌아가기 (초기화)</button>
             </div>
         </div>
     </div>
@@ -143,7 +152,7 @@
         let isGameFinished = false;
         let msgTimeout;
         let pipWindow = null;
-        let isFirstSync = true; // 대회 시작 이전 전적을 거르기 위한 변수
+        let isFirstSync = true;
 
         const mapGroups = {
             groupA: ['Baltic_Main', 'Desert_Main', 'Tiger_Main', 'Kiki_Main', 'Neon_Main', 'DihorOtok_Main'],
@@ -160,13 +169,13 @@
             const pool = document.getElementById('waitingPool');
             
             names.forEach(name => {
-                const 꼬리표 = document.createElement('div');
-                꼬리표.className = 'player-tag';
-                꼬리표.id = 'player-' + Math.random().toString(36).substr(2, 9);
-                꼬리표.draggable = true;
-                꼬리표.ondragstart = drag;
-                꼬리표.innerHTML = `<span class="name-text">${name}</span><span class="remove-btn" onclick="this.parentElement.remove()">✕</span>`;
-                pool.appendChild(꼬리표);
+                const tag = document.createElement('div');
+                tag.className = 'player-tag';
+                tag.id = 'player-' + Math.random().toString(36).substr(2, 9);
+                tag.draggable = true;
+                tag.ondragstart = drag;
+                tag.innerHTML = `<span class="name-text">${name}</span><span class="remove-btn" onclick="this.parentElement.remove()">✕</span>`;
+                pool.appendChild(tag);
             });
             inputEl.value = '';
         }
@@ -175,8 +184,8 @@
             const count = parseInt(document.getElementById('teamCountSelect').value);
             const container = document.getElementById('teamsContainer');
             
-            document.querySelectorAll('.team-dropzone .player-tag').forEach(꼬리표 => {
-                document.getElementById('waitingPool').appendChild(꼬리표);
+            document.querySelectorAll('.team-dropzone .player-tag').forEach(tag => {
+                document.getElementById('waitingPool').appendChild(tag);
             });
 
             container.innerHTML = "";
@@ -220,10 +229,10 @@
                         repPlayer: players[0],
                         lastMatchId: "", 
                         players: players.map(p => ({ name: p, kills: 0, deaths: 0, score: 0 })),
-                        chickenCount: 0, // 누적 1등 횟수
+                        chickenCount: 0,
                         chickenBonusTotal: 0,
                         score: 0,
-                        latestUpdate: null // PiP 애니메이션용 최신 업데이트 정보
+                        latestUpdate: null
                     });
                 }
             });
@@ -256,15 +265,14 @@
             renderLiveScoreBoard();
             clockTimer = setInterval(checkTimeLimit, 1000);
             
-            // 시작과 동시에 기준점(Baseline) 세팅을 위한 1회 통신
             fetchData(); 
             pollingTimer = setInterval(fetchData, 60000); 
         }
 
         function checkTimeLimit() {
             if (isGameFinished) return;
-            const 지금 = new Date();
-            const currentTimeStr = 지금.getHours().toString().padStart(2, '0') + ":" + 지금.getMinutes().toString().padStart(2, '0');
+            const now = new Date();
+            const currentTimeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
             document.getElementById('clock').innerText = "현재 시간: " + currentTimeStr + " / 종료 시간: " + config.endTime;
 
             if (currentTimeStr >= config.endTime) {
@@ -298,11 +306,9 @@
                     
                     fetchedAny = true;
 
-                    // 첫 통신 시: 점수를 계산하지 않고 시작점(Match ID)만 저장합니다.
                     if (isFirstSync) {
                         team.lastMatchId = data.matchId || ""; 
                     } 
-                    // 두 번째 이후 통신: 새로운 매치가 잡혔을 때만 계산
                     else if (data.status === "new_match") {
                         team.lastMatchId = data.matchId;
                         const matchMap = data.map || ""; 
@@ -312,7 +318,6 @@
                 } catch (error) { console.error(error); }
             }
 
-            // 기준점 세팅 완료 처리
             if (isFirstSync && fetchedAny) {
                 isFirstSync = false;
                 document.getElementById('systemMsg').innerHTML = `<span style="color:#00ff00;">✅ 기준 전적 수집 완료. 새로운 전적을 대기합니다.</span>`;
@@ -323,8 +328,8 @@
 
         function calculateScores(team, stats, matchMap) {
             let teamWonMatch = false;
-            let teamBestRank = 99; // 현재 매치 최고 등수 계산용
-            let oldTotalScore = team.score; // 점수 변동량 계산용
+            let teamBestRank = 99;
+            let oldTotalScore = team.score;
 
             team.players.forEach(playerObj => {
                 const matchedKey = Object.keys(stats).find(key => key.toLowerCase() === playerObj.name.toLowerCase());
@@ -349,9 +354,8 @@
                 team.score += chickenBonus;
             }
 
-            // 이번 라운드 변경 사항 애니메이션용 데이터 저장
             let scoreDiff = team.score - oldTotalScore;
-            team.latestUpdate = { rank: teamBestRank, diff: scoreDiff, timestamp: Date.지금() };
+            team.latestUpdate = { rank: teamBestRank, diff: scoreDiff, timestamp: Date.now() };
 
             renderLiveScoreBoard();
             checkTargetScore();
@@ -380,7 +384,6 @@
             }
             pipWindow = await documentPictureInPicture.requestWindow({ width: 340, height: 600 });
             
-            // 애니메이션을 위한 CSS 주입
             const style = document.createElement('style');
             style.textContent = `
                 @keyframes popFade {
@@ -437,10 +440,8 @@
                     </div>
                 `).join('');
                 
-                // 팀 치킨 카운트 하단 표시
                 let chickenHtml = `<span class="chicken-bonus-text">총 ${team.chickenCount}치킨 (보너스: ${team.chickenBonusTotal}점)</span>`;
                 
-                // PiP 전용 애니메이션 오버레이 생성 (5초 이내 업데이트가 있었을 경우)
                 let pipAnimOverlay = "";
                 if (team.latestUpdate && (Date.지금() - team.latestUpdate.timestamp < 5000)) {
                     let sign = team.latestUpdate.diff >= 0 ? "+" : "";
@@ -458,7 +459,7 @@
                         ${pipAnimOverlay}
                         <h4>${team.name}</h4>
                         <h2>${team.score} 점</h2>
-                        <div style="margin-top: 15px; text-align: left; background: #1a1c20; padding: 10px; border-radius: 8px;">
+                        <div style="margin-top: 15px; text-align: left; background: rgba(26, 28, 32, 0.8); padding: 10px; border-radius: 8px;">
                             ${playersHtml}
                             ${chickenHtml}
                         </div>
