@@ -60,7 +60,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>PUBG 커스텀 매치 자동 점수판</h2>
+        <h2>벽킬내기 점수판</h2>
         
         <div id="builderSection">
             <div class="setup-grid">
@@ -111,7 +111,7 @@
                     <label>에/미/태/데/론/비: <input 입력="number" id="chickenA" value="20" style="width: 60px;" title="에란겔, 미라마, 테이고, 데스턴, 론도, 비켄디"></label>
                     <label>사/카/파: <input 입력="number" id="chickenB" value="15" style="width: 60px;" title="사녹, 카라킨, 파라모"></label>
                 </div>
-                <button class="btn-start" onclick="startGame()">🚀 팀 확정 및 대회 시작</button>
+                <button class="btn-start" onclick="startGame()"> 팀 확정 및 대회 시작</button>
             </div>
         </div>
 
@@ -131,7 +131,8 @@
             </div>
             
             <div style="text-align: center; margin-top: 30px;">
-                <button style="background: #e74c3c;" onclick="location.페이지를 새로고침()">🛑 설정 화면으로 돌아가기 (초기화)</button>
+                <button style="background: #9b59b6; margin-right: 10px;" onclick="openPipWindow()">🪟 미니 창(PiP) 띄우기</button>
+                <button style="background: #e74c3c;" onclick="location.페이지를 새로고침()"> 설정 화면으로 돌아가기 (초기화)</button>
             </div>
         </div>
     </div>
@@ -144,6 +145,7 @@
         let pollingTimer, clockTimer;
         let isGameFinished = false;
         let msgTimeout;
+        let pipWindow = null; // PiP 창 객체를 저장할 변수
 
         // 치킨 점수 구분을 위한 맵 그룹 (API 응답 맵 이름 기준)
         const mapGroups = {
@@ -365,10 +367,60 @@
             }
         }
 
+        // --- Document PiP 로직 추가 ---
+        async function openPipWindow() {
+            if (!('documentPictureInPicture' in window)) {
+                alert("현재 사용 중인 브라우저는 HTML PiP 기능을 지원하지 않습니다. 크롬(Chrome) 또는 엣지(Edge) 최신 버전을 권장합니다.");
+                return;
+            }
+            
+            try {
+                // 340x550 크기의 팝업창을 요청
+                pipWindow = await documentPictureInPicture.requestWindow({
+                    width: 340,
+                    height: 550,
+                });
+
+                // 본 화면의 CSS 스타일을 PiP 창으로 복사
+                [...document.styleSheets].forEach(styleSheet => {
+                    try {
+                        const cssRules = [...styleSheet.cssRules].map(rule => rule.cssText).join('');
+                        const style = document.createElement('style');
+                        style.textContent = cssRules;
+                        pipWindow.document.head.appendChild(style);
+                    } catch (e) {
+                        // CORS 이슈가 있는 외부 스타일시트는 무시
+                    }
+                });
+
+                // PiP 창 기본 스타일 설정
+                pipWindow.document.body.style.background = "#121417";
+                pipWindow.document.body.style.color = "white";
+                pipWindow.document.body.style.padding = "15px";
+                pipWindow.document.body.style.margin = "0";
+                pipWindow.document.body.style.fontFamily = "'Malgun Gothic', 'Pretendard', sans-serif";
+
+                // 콘텐츠가 들어갈 컨테이너 생성
+                const container = document.createElement('div');
+                container.id = 'pipContent';
+                pipWindow.document.body.appendChild(container);
+
+                // 창이 닫힐 때 객체 비우기
+                pipWindow.addEventListener("pagehide", () => {
+                    pipWindow = null;
+                });
+
+                // 열자마자 바로 최신 점수 렌더링
+                renderLiveScoreBoard();
+
+            } catch (error) {
+                console.error("PiP 실행 중 오류 발생:", error);
+            }
+        }
+
         function renderLiveScoreBoard() {
             const board = document.getElementById('scoreBoard');
-            board.innerHTML = "";
-            
+            let generatedHtml = "";
             let totalMatchScore = 0;
 
             teamsData.forEach(team => {
@@ -387,7 +439,7 @@
                     chickenHtml = `<span class="chicken-bonus-text">+ 치킨 점수: ${team.chickenBonusTotal}점</span>`;
                 }
 
-                board.innerHTML += `
+                generatedHtml += `
                     <div class="live-team-card">
                         <h4>${team.name}</h4>
                         <h2>${team.score} 점</h2>
@@ -399,7 +451,25 @@
                 `;
             });
 
+            // 1. 본 화면 렌더링
+            board.innerHTML = generatedHtml;
             document.getElementById('totalScoreDisp').innerText = `TOTAL ${totalMatchScore}`;
+
+            // 2. PiP 창이 열려있다면 해당 창에도 동시 렌더링
+            if (pipWindow) {
+                const pipContent = pipWindow.document.getElementById('pipContent');
+                if (pipContent) {
+                    pipContent.innerHTML = `
+                        <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #333;">
+                            <h3 style="color: #f1c40f; margin: 0 0 5px 0;">PUBG 실시간 점수판</h3>
+                            <div style="font-size: 2rem; font-weight: 900; color: #f06414; line-height: 1;">TOTAL ${totalMatchScore}</div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            ${generatedHtml}
+                        </div>
+                    `;
+                }
+            }
         }
     </script>
 </body>
