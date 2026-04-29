@@ -13,7 +13,6 @@
         body { font-family: 'Malgun Gothic', 'Pretendard', sans-serif; background: var(--bg-body); color: white; padding: 20px; margin: 0; }
         .container { max-width: 1200px; margin: 0 auto; }
         
-        /* 공통 패널 스타일 */
         .box { background: var(--bg-panel); padding: 20px; margin-bottom: 20px; border-radius: 12px; border: 1px solid var(--border-color); }
         h2 { margin-top: 0; color: #fff; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
         h3 { margin-top: 0; color: var(--ow-orange); }
@@ -22,7 +21,6 @@
         button:hover { background: #2980b9; }
         .btn-start { background: var(--ow-orange); font-size: 1.1rem; width: 100%; margin-top: 15px; }
         
-        /* 판떼기(팀 편성) 영역 스타일 */
         .setup-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
         .input-group { display: flex; align-items: center; gap: 5px; }
         #waitingPool { min-height: 60px; background: #121417; border: 1px dashed #555; border-radius: 8px; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
@@ -35,14 +33,12 @@
         .team-title { text-align: center; font-weight: bold; font-size: 1.2rem; margin-bottom: 15px; color: #fff; }
         .team-dropzone { flex-grow: 1; background: #121417; border: 1px dashed #444; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
 
-        /* 점수판 스타일 */
         .score-board { display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
-        .live-team-card { background: #222; padding: 20px; width: 280px; text-align: center; border-radius: 10px; border-top: 8px solid #f1c40f; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .live-team-card { background: #222; padding: 20px; width: 280px; text-align: center; border-radius: 10px; border-top: 8px solid #f1c40f; box-shadow: 0 5px 15px rgba(0,0,0,0.5); margin-bottom: 15px; }
         .live-team-card h4 { margin: 0 0 10px 0; font-size: 1.3rem; }
         .live-team-card h2 { color: #f1c40f; font-size: 2.5rem; margin: 10px 0; border: none; padding: 0; }
         
-        /* 개별 전적 표시 영역 */
-        .player-stats-row { display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding: 6px 0; font-size: 0.9rem; color: #ccc; }
+        .player-stats-row { display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding: 6px 0; font-size: 0.9rem; color: #ccc; text-align: left; }
         .player-stats-row:last-child { border-bottom: none; }
         .player-stats-name { font-weight: bold; color: #fff; }
         .player-stats-score { color: #f06414; font-weight: bold; }
@@ -52,7 +48,6 @@
         .failed { color: #ff3333; font-weight: bold; font-size: 1.2rem; }
         .config-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
         
-        /* TOTAL SCORE 패널 */
         .total-score-panel { background: #f06414; padding: 10px 20px; border-radius: 8px; text-align: center; box-shadow: 0 4px 10px rgba(240, 100, 20, 0.3); }
         .total-score-label { font-size: 0.85rem; color: #ffe0cc; display: block; font-weight: bold; }
         .total-score-value { font-size: 2rem; font-weight: 900; color: #fff; margin-top: 2px; }
@@ -107,11 +102,11 @@
                     <label>종료 시간: <input 입력="time" id="endTime"></label>
                 </div>
                 <div class="config-row" style="margin-top: 10px; border-top: 1px solid #333; padding-top: 10px;">
-                    <span style="font-size: 0.9rem; color: #aaa; font-weight: bold;"> 치킨 점수 설정:</span>
+                    <span style="font-size: 0.9rem; color: #aaa; font-weight: bold;">🍗 치킨 점수 설정:</span>
                     <label>에/미/태/데/론/비: <input 입력="number" id="chickenA" value="20" style="width: 60px;" title="에란겔, 미라마, 테이고, 데스턴, 론도, 비켄디"></label>
                     <label>사/카/파: <input 입력="number" id="chickenB" value="15" style="width: 60px;" title="사녹, 카라킨, 파라모"></label>
                 </div>
-                <button class="btn-start" onclick="startGame()"> 팀 확정 및 대회 시작</button>
+                <button class="btn-start" onclick="startGame()">🚀 팀 확정 및 대회 시작</button>
             </div>
         </div>
 
@@ -145,12 +140,11 @@
         let pollingTimer, clockTimer;
         let isGameFinished = false;
         let msgTimeout;
-        let pipWindow = null; // PiP 창 객체를 저장할 변수
+        let pipWindow = null;
 
-        // 치킨 점수 구분을 위한 맵 그룹 (API 응답 맵 이름 기준)
         const mapGroups = {
-            groupA: ['Baltic_Main', 'Desert_Main', 'Tiger_Main', 'Kiki_Main', 'Neon_Main', 'DihorOtok_Main'], // 에란겔, 미라마, 태이고, 데스턴, 론도, 비켄디
-            groupB: ['Savage_Main', 'Summerland_Main', 'Chimera_Main'] // 사녹, 카라킨, 파라모
+            groupA: ['Baltic_Main', 'Desert_Main', 'Tiger_Main', 'Kiki_Main', 'Neon_Main', 'DihorOtok_Main'],
+            groupB: ['Savage_Main', 'Summerland_Main', 'Chimera_Main']
         };
 
         window.onload = function() {
@@ -220,10 +214,10 @@
                     teamsData.push({
                         id: index + 1,
                         name: `TEAM ${index + 1}`,
-                        repPlayer: players[0], // 각 팀의 첫 번째 플레이어를 대표 검색어로 설정
+                        repPlayer: players[0],
                         lastMatchId: "", 
                         players: players.map(p => ({ name: p, kills: 0, deaths: 0, score: 0 })),
-                        chickenBonusTotal: 0, // 누적된 치킨 점수
+                        chickenBonusTotal: 0,
                         score: 0
                     });
                 }
@@ -255,7 +249,7 @@
 
             clockTimer = setInterval(checkTimeLimit, 1000);
             fetchData(); 
-            pollingTimer = setInterval(fetchData, 60000); // 1분마다 호출
+            pollingTimer = setInterval(fetchData, 60000); 
         }
 
         function checkTimeLimit() {
@@ -267,6 +261,8 @@
             if (currentTimeStr >= config.endTime) {
                 endGame(false);
             }
+            // PiP 창이 있다면 시간 동기화
+            if (pipWindow) renderLiveScoreBoard();
         }
 
         function showTemporaryMessage(msg) {
@@ -283,68 +279,42 @@
 
         async function fetchData() {
             if (isGameFinished) return;
-            
             let updatedTeams = [];
-
             for (let team of teamsData) {
                 if (!team.repPlayer) continue;
                 try {
                     const res = await fetch(`${BACKEND_URL}?player=${team.repPlayer}&lastMatch=${team.lastMatchId}`);
                     const data = await res.json();
-
                     if (data.status === "new_match") {
                         team.lastMatchId = data.matchId;
-                        const matchMap = data.map || ""; // Vercel에서 map 정보가 넘어와야 함
+                        const matchMap = data.map || ""; 
                         calculateScores(team, data.stats, matchMap);
                         updatedTeams.push(team.name);
                     }
-                } catch (error) {
-                    console.error(`${team.name} 데이터 호출 중 문제 발생:`, error);
-                }
+                } catch (error) { console.error(error); }
             }
-
-            if (updatedTeams.length > 0) {
-                showTemporaryMessage(`${updatedTeams.join(', ')} 의 매치 종료! 최신 점수를 반영했습니다.`);
-            }
+            if (updatedTeams.length > 0) showTemporaryMessage(`${updatedTeams.join(', ')} 의 매치 종료! 최신 점수를 반영했습니다.`);
         }
 
         function calculateScores(team, stats, matchMap) {
             let teamWonMatch = false;
-
             team.players.forEach(playerObj => {
                 const matchedKey = Object.keys(stats).find(key => key.toLowerCase() === playerObj.name.toLowerCase());
                 if (matchedKey) {
                     const s = stats[matchedKey];
                     const earned = (s.kills * config.killScore) - (s.deaths * config.deathPenalty);
-                    
                     playerObj.kills += s.kills;
                     playerObj.deaths += s.deaths;
                     playerObj.score += earned;
                     team.score += earned;
-
-                    // 해당 팀의 인원 중 1등 기록이 있다면 팀 전체 승리로 간주
-                    if (s.isWinner) {
-                        teamWonMatch = true;
-                    }
+                    if (s.isWinner) teamWonMatch = true;
                 }
             });
-
-            // 치킨 점수 합산
             if (teamWonMatch) {
-                let chickenBonus = 0;
-                if (mapGroups.groupA.includes(matchMap)) {
-                    chickenBonus = config.chickenA;
-                } else if (mapGroups.groupB.includes(matchMap)) {
-                    chickenBonus = config.chickenB;
-                } else {
-                    // 맵 그룹에 속하지 않거나 맵 정보가 없을 경우 기본값으로 A그룹 점수 부여 (예외 처리)
-                    chickenBonus = config.chickenA; 
-                }
-                
+                let chickenBonus = mapGroups.groupB.includes(matchMap) ? config.chickenB : config.chickenA;
                 team.chickenBonusTotal += chickenBonus;
                 team.score += chickenBonus;
             }
-
             renderLiveScoreBoard();
             checkTargetScore();
         }
@@ -359,114 +329,73 @@
             clearInterval(pollingTimer);
             clearInterval(clockTimer);
             clearTimeout(msgTimeout);
-            
-            if (isSuccess) {
-                document.getElementById('systemMsg').innerHTML = `<span class="status"> 대회 종료! ${winnerName} 팀이 목표 점수를 달성했습니다!</span>`;
-            } else {
-                document.getElementById('systemMsg').innerHTML = `<span class="failed"> 시간 종료! 목표 점수에 도달한 팀이 없습니다.</span>`;
-            }
+            const msgEl = document.getElementById('systemMsg');
+            if (isSuccess) msgEl.innerHTML = `<span class="status"> 대회 종료! ${winnerName} 팀이 목표 점수를 달성했습니다!</span>`;
+            else msgEl.innerHTML = `<span class="failed"> 시간 종료! 목표 점수에 도달한 팀이 없습니다.</span>`;
+            if (pipWindow) renderLiveScoreBoard();
         }
 
-        // --- Document PiP 로직 추가 ---
         async function openPipWindow() {
             if (!('documentPictureInPicture' in window)) {
-                alert("현재 사용 중인 브라우저는 HTML PiP 기능을 지원하지 않습니다. 크롬(Chrome) 또는 엣지(Edge) 최신 버전을 권장합니다.");
+                alert("PiP 기능을 지원하지 않는 브라우저입니다.");
                 return;
             }
-            
-            try {
-                // 340x550 크기의 팝업창을 요청
-                pipWindow = await documentPictureInPicture.requestWindow({
-                    width: 340,
-                    height: 550,
-                });
-
-                // 본 화면의 CSS 스타일을 PiP 창으로 복사
-                [...document.styleSheets].forEach(styleSheet => {
-                    try {
-                        const cssRules = [...styleSheet.cssRules].map(rule => rule.cssText).join('');
-                        const style = document.createElement('style');
-                        style.textContent = cssRules;
-                        pipWindow.document.head.appendChild(style);
-                    } catch (e) {
-                        // CORS 이슈가 있는 외부 스타일시트는 무시
-                    }
-                });
-
-                // PiP 창 기본 스타일 설정
-                pipWindow.document.body.style.background = "#121417";
-                pipWindow.document.body.style.color = "white";
-                pipWindow.document.body.style.padding = "15px";
-                pipWindow.document.body.style.margin = "0";
-                pipWindow.document.body.style.fontFamily = "'Malgun Gothic', 'Pretendard', sans-serif";
-
-                // 콘텐츠가 들어갈 컨테이너 생성
-                const container = document.createElement('div');
-                container.id = 'pipContent';
-                pipWindow.document.body.appendChild(container);
-
-                // 창이 닫힐 때 객체 비우기
-                pipWindow.addEventListener("pagehide", () => {
-                    pipWindow = null;
-                });
-
-                // 열자마자 바로 최신 점수 렌더링
-                renderLiveScoreBoard();
-
-            } catch (error) {
-                console.error("PiP 실행 중 오류 발생:", error);
-            }
+            pipWindow = await documentPictureInPicture.requestWindow({ width: 340, height: 550 });
+            [...document.styleSheets].forEach(styleSheet => {
+                try {
+                    const cssRules = [...styleSheet.cssRules].map(rule => rule.cssText).join('');
+                    const style = document.createElement('style');
+                    style.textContent = cssRules;
+                    pipWindow.document.head.appendChild(style);
+                } catch (e) {}
+            });
+            pipWindow.document.body.style.background = "#121417";
+            const container = document.createElement('div');
+            container.id = 'pipContent';
+            pipWindow.document.body.appendChild(container);
+            pipWindow.addEventListener("pagehide", () => { pipWindow = null; });
+            renderLiveScoreBoard();
         }
 
         function renderLiveScoreBoard() {
             const board = document.getElementById('scoreBoard');
+            const clockText = document.getElementById('clock').innerText;
             let generatedHtml = "";
             let totalMatchScore = 0;
 
             teamsData.forEach(team => {
                 totalMatchScore += team.score;
-                
                 let playersHtml = team.players.map(p => `
                     <div class="player-stats-row">
                         <span class="player-stats-name">${p.name}</span>
                         <span>${p.kills}K / ${p.deaths}D <span class="player-stats-score">(${p.score}점)</span></span>
                     </div>
                 `).join('');
-
-                // 치킨 점수가 있다면 추가 표시
-                let chickenHtml = "";
-                if (team.chickenBonusTotal > 0) {
-                    chickenHtml = `<span class="chicken-bonus-text">+ 치킨 점수: ${team.chickenBonusTotal}점</span>`;
-                }
-
+                let chickenHtml = team.chickenBonusTotal > 0 ? `<span class="chicken-bonus-text">+ 치킨 점수: ${team.chickenBonusTotal}점</span>` : "";
                 generatedHtml += `
                     <div class="live-team-card">
                         <h4>${team.name}</h4>
                         <h2>${team.score} 점</h2>
                         <div style="margin-top: 15px; text-align: left; background: #1a1c20; padding: 10px; border-radius: 8px;">
-                            ${playersHtml}
-                            ${chickenHtml}
+                            ${playersHtml}${chickenHtml}
                         </div>
                     </div>
                 `;
             });
 
-            // 1. 본 화면 렌더링
             board.innerHTML = generatedHtml;
             document.getElementById('totalScoreDisp').innerText = `TOTAL ${totalMatchScore}`;
 
-            // 2. PiP 창이 열려있다면 해당 창에도 동시 렌더링
             if (pipWindow) {
                 const pipContent = pipWindow.document.getElementById('pipContent');
                 if (pipContent) {
                     pipContent.innerHTML = `
-                        <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #333;">
+                        <div style="text-align: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #333;">
                             <h3 style="color: #f1c40f; margin: 0 0 5px 0;">PUBG 실시간 점수판</h3>
-                            <div style="font-size: 2rem; font-weight: 900; color: #f06414; line-height: 1;">TOTAL ${totalMatchScore}</div>
+                            <div style="font-size: 0.8rem; color: #ffcc00; margin-bottom: 5px;">${clockText}</div>
+                            <div style="font-size: 1.8rem; font-weight: 900; color: #f06414;">TOTAL ${totalMatchScore}</div>
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 15px;">
-                            ${generatedHtml}
-                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 15px; padding: 10px;">${generatedHtml}</div>
                     `;
                 }
             }
