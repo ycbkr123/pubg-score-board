@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>PUBG 커스텀 매치 점수판</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; background: #121212; color: white; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .box { background: #222; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        input, button { padding: 10px; margin: 5px; }
+        .score-board { display: flex; justify-content: space-between; flex-wrap: wrap; }
+        .team-card { background: #333; padding: 15px; width: 45%; margin-bottom: 10px; border-radius: 5px; }
+        .status { color: #00ff00; font-weight: bold; }
+        .failed { color: #ff3333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>PUBG 커스텀 매치 자동 점수판</h2>
+        
+        <div class="box" id="setupSection">
+            <h3>설정</h3>
+            <label>대표 유저 닉네임 (1명 검색용): <input type="text" id="repPlayer" value="PlayerName1"></label><br>
+            <label>킬 당 점수: <input type="number" id="killScore" value="10"></label>
+            <label>데스 당 감점: <input type="number" id="deathPenalty" value="5"></label><br>
+            <label>목표 점수: <input type="number" id="targetScore" value="100"></label><br>
+            <label>종료 시간 (HH:MM): <input type="time" id="endTime"></label><br><br>
+            <button onclick="startGame()">대회 시작</button>
+        </div>
+
+        <div class="box" id="matchSection" style="display:none;">
+            <h3>진행 상황 <span id="clock" style="float:right; color:#ffcc00;"></span></h3>
+            <p id="systemMsg">데이터 갱신 대기 중...</p>
+            <div class="score-board" id="scoreBoard">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        // Vercel 배포 후 발급받은 URL로 변경하세요! (예: https://my-pubg-api.vercel.app)
+        const BACKEND_URL = "YOUR_VERCEL_APP_URL_HERE/api"; 
+        
+        // 팀 설정 (테스트를 위해 임시로 2팀만 작성. 실제 사용 시 4팀까지 추가하세요)
+        const teams = [
+            { id: 1, name: "Team Alpha", players: ["PlayerA1", "PlayerA2", "PlayerA3", "PlayerA4"], score: 0 },
+            { id: 2, name: "Team Bravo", players: ["PlayerB1", "PlayerB2", "PlayerB3", "PlayerB4"], score: 0 }
+        ];
+
+        let config = {};
+        let lastMatchId = "";
+        let pollingTimer, clockTimer;
+        let isGameFinished = false;
+
+        function startGame() {
+            config = {
+                repPlayer: document.getElementById('repPlayer').value,
+                killScore: parseInt(document.getElementById('killScore').value),
+                deathPenalty: parseInt(document.getElementById('deathPenalty').value),
+                targetScore: parseInt(document.getElementById('targetScore').value),
+                endTime: document.getElementById('endTime').value
+            };
+
+            if (!config.repPlayer || !config.endTime || BACKEND_URL.includes("YOUR_VERCEL_APP_URL")) {
+                alert("설정 값과 백엔드 URL을 확인해주세요.");
+                return;
+            }
+
+            document.getElementById('setupSection').style.display = 'none';
+            document.getElementById('matchSection').style.display = 'block';
+            renderScoreBoard();
+
+            // 1. 종료 시간 체크 알람 (1초마다)
+            clockTimer = setInterval(checkTimeLimit, 1000);
+            
+            // 2. 전적 갱신 Polling (60초마다 API 호출)
+            fetchData(); // 즉시 1회 실행
+            pollingTimer = setInterval(fetchData, 60000); 
+        }
+
+        function checkTimeLimit() {
+            if (isGameFinished) return;
+            
+            const now = new Date();
+            const currentTimeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('clock').innerText = "현재 시간: " + currentTimeStr + " / 종료 시간: " + config.endTime;
+
+            if (currentTimeStr >= config.endTime) {
+                endGame(false); // 시간 초과로 인한 실패 체크
+            }
+        }
+
+        async function fetchData() {
+            if (isGameFinished) return;
+            document.getElementById('systemMsg').innerText = "데이터 확인 중...";
+
+            try {
+                // 백엔드로 대표 플레이어 이름과 이전 매치 ID 전송
+                const res = await fetch(`${BACKEND_URL}?player=${config.repPlayer}&lastMatch=${lastMatchId}`);
+                const data = await res.json();
+
+                if (data.status === "no_new_match") {
+                    document.getElementById('systemMsg').innerText = "새로운 매치 결과가 없습니다. 게임 진행 중...";
+                    lastMatchId = data.matchId; 
+                } 
+                else if (data.status === "new_match") {
+                    document.getElementById('systemMsg').innerText = "매치 종료! 데이터를 반영했습니다.";
+                    lastMatchId = data.matchId;
+                    calculateScores(data.stats);
+                }
+            } catch (error) {
+                document.getElementById('systemMsg').innerText = "통신 에러 발생: " + error.message;
+            }
+        }
+
+        function calculateScores(stats) {
+            teams.forEach(team => {
+                team.players.forEach(playerName => {
+                    if (stats[playerName]) {
+                        const k = stats[playerName].kills;
+                        const d = stats[playerName].deaths;
+                        // 공식: (킬 수 * 킬 점수) - (데스 수 * 감점)
+                        const earned = (k * config.killScore) - (d * config.deathPenalty);
+                        team.score += earned;
+                    }
+                });
+            });
+            renderScoreBoard();
+            checkTargetScore();
+        }
+
+        function checkTargetScore() {
+            const winner = teams.find(t => t.score >= config.targetScore);
+            if (winner) endGame(true, winner.name);
+        }
+
+        function endGame(isSuccess, winnerName = "") {
+            isGameFinished = true;
+            clearInterval(pollingTimer);
+            clearInterval(clockTimer);
+            
+            if (isSuccess) {
+                document.getElementById('systemMsg').innerHTML = `<span class="status">🎉 성공! ${winnerName} 팀이 목표 점수를 달성했습니다!</span>`;
+            } else {
+                document.getElementById('systemMsg').innerHTML = `<span class="failed">❌ 실패! 제한 시간 내에 목표 점수에 도달한 팀이 없습니다.</span>`;
+            }
+        }
+
+        function renderScoreBoard() {
+            const board = document.getElementById('scoreBoard');
+            board.innerHTML = "";
+            teams.forEach(team => {
+                board.innerHTML += `
+                    <div class="team-card">
+                        <h4>${team.name}</h4>
+                        <h2>${team.score} 점</h2>
+                        <small>${team.players.join(', ')}</small>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
