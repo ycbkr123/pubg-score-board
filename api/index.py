@@ -1,121 +1,107 @@
-<div class="box">
-    <h3>4. 점수판 룰 설정</h3>
-    <div class="config-row">
-        <label>킬 점수: <input type="number" id="killScore" value="1" style="width: 50px;"></label>
-        <label>데스 감점: <input type="number" id="deathPenalty" value="1" style="width: 50px;"></label>
-        <label>목표 점수: <input type="number" id="targetScore" value="100" style="width: 70px;"></label>
-        <label>종료 시간: <input type="time" id="endTime"></label>
-    </div>
-    <div class="config-row" style="margin-top: 10px; border-top: 1px solid #333; padding-top: 10px;">
-        <span style="font-size: 0.9rem; color: #aaa;">치킨 점수 설정:</span>
-        <label>에/미/태/데/론/비: <input type="number" id="chickenA" value="20" style="width: 50px;" title="에란겔, 미라마, 테이고, 데스턴, 론도, 비켄디"></label>
-        <label>사/카/파: <input type="number" id="chickenB" value="15" style="width: 50px;" title="사녹, 카라킨, 파라모"></label>
-    </div>
-    <button class="btn-start" onclick="startGame()">팀 확정 및 대회 시작</button>
-</div>
+from http.server import BaseHTTPRequestHandler
+from urllib import parse
+import json
+import requests
+import os
 
-<div class="box" id="matchSection" style="display:none;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3>진행 상황 <span id="clock" style="font-size: 1rem; color:#ffcc00; margin-left: 10px;"></span></h3>
-        <div style="background: #f06414; padding: 10px 20px; border-radius: 8px; text-align: center;">
-            <span style="font-size: 0.8rem; color: #eee; display: block;">전체 팀 합계 점수</span>
-            <span id="totalScoreDisp" style="font-size: 1.8rem; font-weight: 900; color: #fff;">TOTAL 0</span>
-        </div>
-    </div>
-    <p id="systemMsg">데이터 갱신 대기 중...</p>
-    <div class="score-board" id="scoreBoard"></div>
-    </div>
+# Vercel 환경 변수에서 API 키를 안전하게 불러옵니다.
+PUBG_API_KEY = os.environ.get("PUBG_API_KEY")
+HEADERS = {
+    "Authorization": f"Bearer {PUBG_API_KEY}",
+    "Accept": "application/vnd.api+json"
+}
 
-<script>
-    // [중략] 이전과 동일한 변수 및 UI 로직
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        query = dict(parse.parse_qsl(parse.urlsplit(self.path).query))
+        player_name = query.get("player")
+        last_match_id = query.get("lastMatch")
 
-    function startGame() {
-        // [중략] 팀 데이터 구성 로직 동일
+        self.send_response(200)
+        # CORS 설정: GitHub Pages(프론트엔드)에서 접근할 수 있도록 허용
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
 
-        config = {
-            killScore: parseInt(document.getElementById('killScore').value),
-            deathPenalty: parseInt(document.getElementById('deathPenalty').value),
-            targetScore: parseInt(document.getElementById('targetScore').value),
-            endTime: document.getElementById('endTime').value,
-            // 치킨 점수 설정값 가져오기
-            chickenA: parseInt(document.getElementById('chickenA').value),
-            chickenB: parseInt(document.getElementById('chickenB').value)
-        };
+        if not player_name:
+            self.wfile.write(json.dumps({"error": "Player name required"}).encode('utf-8'))
+            return
 
-        // [중략] 화면 전환 및 타이머 시작 로직 동일
-    }
-
-    // 치킨 점수 부여를 위한 맵 그룹 분류 [추론]
-    const mapGroups = {
-        groupA: ['Baltic_Main', 'Desert_Main', 'Tiger_Main', 'Kiki_Main', 'Neon_Main', 'DihorOtok_Main'], // 에/미/태/데/론/비
-        groupB: ['Savage_Main', 'Summerland_Main', 'Chimera_Main'] // 사/카/파
-    };
-
-    function calculateScores(team, stats, matchMap) {
-        let teamWonMatch = false;
-
-        team.players.forEach(playerObj => {
-            const matchedKey = Object.keys(stats).find(key => key.toLowerCase() === playerObj.name.toLowerCase());
-            if (matchedKey) {
-                const s = stats[matchedKey];
-                const earned = (s.kills * config.killScore) - (s.deaths * config.deathPenalty);
+        try:
+            # 1. 유저 Account ID 및 플랫폼(shard) 동적 조회
+            account_id = None
+            found_platform = None
+            
+            # 스팀을 먼저 찾고, 없으면 카카오를 찾습니다.
+            for platform in ['steam', 'kakao']:
+                url_player = f"https://api.pubg.com/shards/{platform}/players?filter[playerNames]={player_name}"
+                res_player = requests.get(url_player, headers=HEADERS)
                 
-                playerObj.kills += s.kills;
-                playerObj.deaths += s.deaths;
-                playerObj.score += earned;
-                team.score += earned;
+                if res_player.status_code == 200:
+                    data = res_player.json()
+                    if 'data' in data 및 data['data']:
+                        account_id = data['data'][0]['id']
+                        found_platform = platform
+                        break # 유저를 찾았으므로 반복문 종료
+            
+            # 스팀과 카카오 모두 찾지 못한 경우
+            if not account_id:
+                self.wfile.write(json.dumps({"error": "Player not found on Steam or Kakao"}).encode('utf-8'))
+                return
 
-                // 해당 팀원 중 한 명이라도 승리(1등)했다면 팀 승리로 간주
-                if (s.isWinner) teamWonMatch = true;
+            # 2. 최근 매치 ID 가져오기 (찾은 플랫폼을 주소에 대입)
+            url_account = f"https://api.pubg.com/shards/{found_platform}/players/{account_id}"
+            res_account = requests.get(url_account, headers=HEADERS).json()
+            matches = res_account['data']['relationships']['matches']['data']
+            
+            if not matches:
+                self.wfile.write(json.dumps({"error": "No recent matches found"}).encode('utf-8'))
+                return
+                
+            latest_match_id = matches[0]['id']
+
+            # 3. 새로운 매치가 없다면 종료
+            if latest_match_id == last_match_id:
+                self.wfile.write(json.dumps({"status": "no_new_match", "matchId": latest_match_id}).encode('utf-8'))
+                return
+
+            # 4. 새로운 매치라면 상세 데이터 조회 (찾은 플랫폼을 주소에 대입)
+            url_match = f"https://api.pubg.com/shards/{found_platform}/matches/{latest_match_id}"
+            res_match = requests.get(url_match, headers=HEADERS).json()
+
+            # 맵 이름 가져오기
+            map_name = res_match['data']['attributes'].get('mapName', '')
+
+            player_stats = {}
+            # included 배열에서 참여자(participant) 데이터만 파싱
+            for item in res_match.get('included', []):
+                if item['type'] == 'participant':
+                    stats = item['attributes']['stats']
+                    name = stats['name']
+                    kills = stats.get('kills', 0)
+                    
+                    deaths = 1 if stats.get('deathType') != 'alive' else 0
+                    
+                    # 등수 및 승리 여부 파싱
+                    win_place = stats.get('winPlace', 99)
+                    is_winner = True if win_place == 1 else False
+                    
+                    player_stats[name] = {
+                        "kills": kills, 
+                        "deaths": deaths, 
+                        "isWinner": is_winner,
+                        "winPlace": win_place
+                    }
+
+            # 최종 데이터 구성
+            result = {
+                "status": "new_match",
+                "matchId": latest_match_id,
+                "map": map_name,
+                "stats": player_stats
             }
-        });
+            
+            self.wfile.write(json.dumps(result).encode('utf-8'))
 
-        // 치킨 점수 부여 [추론]
-        if (teamWonMatch) {
-            let chickenBonus = 0;
-            if (mapGroups.groupA.includes(matchMap)) {
-                chickenBonus = config.chickenA;
-            } else if (mapGroups.groupB.includes(matchMap)) {
-                chickenBonus = config.chickenB;
-            }
-            team.score += chickenBonus;
-            // 대표 유저(팀장) 점수에 치킨 점수 합산 표기 (선택 사항)
-            team.players[0].score += chickenBonus;
-        }
-
-        renderLiveScoreBoard();
-        checkTargetScore();
-    }
-
-    function renderLiveScoreBoard() {
-        const board = document.getElementById('scoreBoard');
-        board.innerHTML = "";
-        
-        let totalScore = 0; // 전체 합계 계산
-
-        teamsData.forEach(team => {
-            totalScore += team.score;
-            let playersHtml = team.players.map(p => `
-                <div class="player-stats-row">
-                    <span class="player-stats-name">${p.name}</span>
-                    <span>${p.kills}K / ${p.deaths}D <span class="player-stats-score">(${p.score}점)</span></span>
-                </div>
-            `).join('');
-
-            board.innerHTML += `
-                <div class="live-team-card">
-                    <h4>${team.name}</h4>
-                    <h2>${team.score} 점</h2>
-                    <div style="margin-top: 15px; text-align: left; background: #1a1c20; padding: 10px; border-radius: 8px;">
-                        ${playersHtml}
-                    </div>
-                </div>
-            `;
-        });
-
-        // TOTAL SCORE 업데이트
-        document.getElementById('totalScoreDisp').innerText = `TOTAL ${totalScore}`;
-    }
-    
-    // [중략] 나머지 통신 및 종료 로직 동일
-</script>
+        except Exception as e:
+            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
