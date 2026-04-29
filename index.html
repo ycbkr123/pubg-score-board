@@ -12,7 +12,7 @@
         }
         body { 
             font-family: 'Malgun Gothic', 'Pretendard', sans-serif; 
-            background-color: var(--bg-body); /* 요구사항 1: 배경색 변경 */
+            background-color: var(--bg-body); 
             min-height: 100vh;
             color: white; 
             padding: 20px; 
@@ -21,7 +21,8 @@
         .container { max-width: 1200px; margin: 0 auto; }
         
         .box { background: var(--bg-panel); padding: 20px; margin-bottom: 20px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        h2 { margin-top: 0; color: #fff; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
+        h2 { margin-top: 0; color: #fff; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); display: inline-block; cursor: pointer; transition: color 0.2s; }
+        h2:hover { color: var(--ow-orange); }
         h3 { margin-top: 0; color: var(--ow-orange); }
         input, select { padding: 10px; margin: 5px; background: #121417; border: 1px solid var(--border-color); color: white; border-radius: 6px; }
         button { padding: 10px 20px; margin: 5px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
@@ -63,7 +64,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>코렛트 벽킬내기</h2>
+        <h2 onclick="location.페이지를 새로고침()" title="클릭 시 설정 화면으로 돌아갑니다">코렛트 벽킬내기</h2>
         
         <div id="builderSection">
             <div class="setup-grid">
@@ -83,7 +84,7 @@
                         </select>
                     </div>
                     <div class="input-group" style="margin-top: 10px;">
-                        <input 입력="text" id="streamerInput" placeholder="닉네임 (쉼표로 구분)" style="flex-grow: 1;" onkeypress="if(event.key==='Enter') addStreamers()">
+                        <input type="text" id="streamerInput" placeholder="닉네임 (쉼표로 구분)" style="flex-grow: 1;" onkeypress="if(event.key==='Enter') addStreamers()">
                         <button onclick="addStreamers()">추가</button>
                     </div>
                 </div>
@@ -147,7 +148,7 @@
         let config = {};
         let pollingTimer, clockTimer;
         let isGameFinished = false;
-        let gameEndReason = ""; // PiP 출력을 위한 종료 사유
+        let gameEndReason = "";
         let msgTimeout;
         let pipWindow = null;
         let isFirstSync = true;
@@ -167,6 +168,7 @@
             const pool = document.getElementById('waitingPool');
             
             names.forEach(name => {
+                // 오류 수정: 꼬리표 -> tag 로 변수명 수정
                 const 꼬리표 = document.createElement('div');
                 꼬리표.className = 'player-tag';
                 꼬리표.id = 'player-' + Math.random().toString(36).substr(2, 9);
@@ -182,8 +184,8 @@
             const count = parseInt(document.getElementById('teamCountSelect').value);
             const container = document.getElementById('teamsContainer');
             
-            document.querySelectorAll('.team-dropzone .player-tag').forEach(꼬리표 => {
-                document.getElementById('waitingPool').appendChild(꼬리표);
+            document.querySelectorAll('.team-dropzone .player-tag').forEach(tag => {
+                document.getElementById('waitingPool').appendChild(tag);
             });
 
             container.innerHTML = "";
@@ -269,12 +271,12 @@
 
         function checkTimeLimit() {
             if (isGameFinished) return;
-            const now = new Date();
-            const currentTimeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            const 지금 = new Date();
+            const currentTimeStr = 지금.getHours().toString().padStart(2, '0') + ":" + 지금.getMinutes().toString().padStart(2, '0');
             document.getElementById('clock').innerText = "현재 시간: " + currentTimeStr + " / 종료 시간: " + config.endTime;
 
             if (currentTimeStr >= config.endTime) {
-                endGame(false); // 요구사항 2: 시간 종료 처리
+                endGame(false); 
             }
             if (pipWindow) renderLiveScoreBoard();
         }
@@ -353,23 +355,23 @@
             }
 
             let scoreDiff = team.score - oldTotalScore;
+            // 오류 수정: Date.지금() -> Date.now()
             team.latestUpdate = { rank: teamBestRank, diff: scoreDiff, timestamp: Date.지금() };
 
             renderLiveScoreBoard();
             checkTargetScore();
         }
 
-        // 요구사항 3: 목표점수를 TOTAL(전체 팀 합계) 기준으로 판단
         function checkTargetScore() {
             const total = teamsData.reduce((sum, t) => sum + t.score, 0);
             if (total >= config.targetScore) {
-                endGame(true); // 성공 처리
+                endGame(true); 
             }
         }
 
         function endGame(isSuccess) {
             isGameFinished = true;
-            gameEndReason = isSuccess ? "목표 점수 성공" : "시간 종료"; // 요구사항 2, 3 메시지 설정
+            gameEndReason = isSuccess ? "목표 점수 성공" : "시간 종료";
             
             clearInterval(pollingTimer);
             clearInterval(clockTimer);
@@ -382,7 +384,7 @@
                 msgEl.innerHTML = `<span class="failed">⏰ 시간 종료! 목표 점수에 도달하지 못했습니다.</span>`;
             }
             
-            renderLiveScoreBoard(); // 최종 상태 렌더링 (PiP 포함)
+            renderLiveScoreBoard(); 
         }
 
         async function openPipWindow() {
@@ -390,10 +392,35 @@
                 alert("PiP 기능을 지원하지 않는 브라우저입니다.");
                 return;
             }
-            pipWindow = await documentPictureInPicture.requestWindow({ width: 340, height: 600 });
+            
+            // 요구사항 1: PiP 창 축소 (가로 380, 세로 280)
+            pipWindow = await documentPictureInPicture.requestWindow({ width: 380, height: 280 });
             
             const style = document.createElement('style');
+            // 요구사항 2: 새로운 배치 형태에 맞는 CSS 적용
             style.textContent = `
+                body { margin: 0; background: #222; font-family: 'Malgun Gothic', 'Pretendard', sans-serif; color: #000; overflow: hidden; }
+                .pip-container { display: flex; flex-direction: column; height: 100vh; background: #333; }
+                .pip-header { background: #b8d4a9; color: #222; text-align: center; padding: 4px 0; font-size: 1.1rem; font-weight: 900; }
+                .pip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: #333; flex-grow: 1; }
+                .pip-team { background: #fff; display: flex; flex-direction: column; position: relative; }
+                .pip-team-head { text-align: center; font-weight: 900; font-size: 1rem; padding: 2px 0; color: #222; border-bottom: 1px solid #ccc; }
+                
+                /* 팀별 헤더 배경색 (빨, 주, 노, 파) */
+                .pip-team-head.t0 { background: #d58a82; }
+                .pip-team-head.t1 { background: #f0b78e; }
+                .pip-team-head.t2 { background: #ebd07f; }
+                .pip-team-head.t3 { background: #a7c4de; }
+                
+                .pip-player { display: flex; justify-content: space-between; font-size: 0.75rem; padding: 1px 6px; color: #333; }
+                .pip-player span:first-child { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; }
+                .pip-player span:last-child { color: #555; }
+                .pip-footer { text-align: center; font-size: 0.75rem; font-weight: 900; padding: 2px 0; margin-top: auto; color: #444; border-top: 1px dashed #ccc; }
+
+                .pip-end-msg { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 900; color: #ff3333; text-shadow: 0 0 10px rgba(255, 51, 51, 0.5); z-index: 100; flex-direction: column; text-align: center; }
+                .pip-end-msg.success { color: #00ff00; text-shadow: 0 0 10px rgba(0, 255, 0, 0.5); }
+                .pip-end-msg span { font-size: 1rem; color: #ccc; margin-bottom: 10px; font-weight: normal; text-shadow: none; }
+
                 @keyframes popFade {
                     0% { transform: scale(0.5); opacity: 0; }
                     10% { transform: scale(1.1); opacity: 1; pointer-events: auto; }
@@ -403,30 +430,16 @@
                 }
                 .pip-update-anim {
                     position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-                    background: rgba(0, 0, 0, 0.9);
-                    border-radius: 10px;
+                    background: rgba(0, 0, 0, 0.85);
                     display: flex; flex-direction: column; justify-content: center; align-items: center;
                     animation: popFade 5s forwards;
                     z-index: 10;
                 }
-                .pip-rank { font-size: 3.5rem; color: #f1c40f; font-weight: 900; text-shadow: 0 0 15px rgba(241, 196, 15, 0.6); margin-bottom: 5px; line-height: 1; }
-                .pip-diff { font-size: 2rem; color: #2ecc71; font-weight: bold; }
-                .live-team-card { position: relative; }
-                .pip-end-msg { font-size: 2.2rem; font-weight: 900; color: #ff3333; margin-top: 10px; text-shadow: 0 0 10px rgba(255, 51, 51, 0.5); }
-                .pip-end-msg.success { color: #00ff00; text-shadow: 0 0 10px rgba(0, 255, 0, 0.5); }
+                .pip-rank { font-size: 2.5rem; color: #f1c40f; font-weight: 900; text-shadow: 0 0 10px rgba(241, 196, 15, 0.8); margin-bottom: 2px; line-height: 1; }
+                .pip-diff { font-size: 1.5rem; color: #2ecc71; font-weight: bold; }
             `;
             pipWindow.document.head.appendChild(style);
 
-            [...document.styleSheets].forEach(styleSheet => {
-                try {
-                    const cssRules = [...styleSheet.cssRules].map(rule => rule.cssText).join('');
-                    const s = document.createElement('style');
-                    s.textContent = cssRules;
-                    pipWindow.document.head.appendChild(s);
-                } catch (e) {}
-            });
-
-            pipWindow.document.body.style.background = "#121417";
             const container = document.createElement('div');
             container.id = 'pipContent';
             pipWindow.document.body.appendChild(container);
@@ -438,66 +451,98 @@
         function renderLiveScoreBoard() {
             const board = document.getElementById('scoreBoard');
             const clockText = document.getElementById('clock').innerText;
-            let generatedHtml = "";
+            let generatedHtmlMain = "";
+            let generatedHtmlPip = "";
             let totalMatchScore = 0;
 
-            teamsData.forEach(team => {
+            teamsData.forEach((team, index) => {
                 totalMatchScore += team.score;
-                let playersHtml = team.players.map(p => `
+                
+                // === 메인 화면 HTML 생성 ===
+                let playersHtmlMain = team.players.map(p => `
                     <div class="player-stats-row">
                         <span class="player-stats-name">${p.name}</span>
                         <span>${p.kills}K / ${p.deaths}D <span class="player-stats-score">(${p.score}점)</span></span>
                     </div>
                 `).join('');
                 
-                let chickenHtml = `<span class="chicken-bonus-text">총 ${team.chickenCount}치킨 (보너스: ${team.chickenBonusTotal}점)</span>`;
+                let chickenHtmlMain = `<span class="chicken-bonus-text">총 ${team.chickenCount}치킨 (보너스: ${team.chickenBonusTotal}점)</span>`;
                 
-                let pipAnimOverlay = "";
+                let animOverlay = "";
                 if (team.latestUpdate && (Date.지금() - team.latestUpdate.timestamp < 5000)) {
                     let sign = team.latestUpdate.diff >= 0 ? "+" : "";
                     let diffColor = team.latestUpdate.diff >= 0 ? "#2ecc71" : "#e74c3c";
-                    pipAnimOverlay = `
-                        <div class="pip-update-anim">
+                    animOverlay = `
+                        <div class="pip-update-anim" style="border-radius: 10px;">
                             <div class="pip-rank">${team.latestUpdate.rank}등!</div>
                             <div class="pip-diff" style="color: ${diffColor};">${sign}${team.latestUpdate.diff}점</div>
                         </div>
                     `;
                 }
 
-                generatedHtml += `
+                generatedHtmlMain += `
                     <div class="live-team-card">
-                        ${pipAnimOverlay}
+                        ${animOverlay}
                         <h4>${team.name}</h4>
                         <h2>${team.score} 점</h2>
                         <div style="margin-top: 15px; text-align: left; background: rgba(26, 28, 32, 0.8); padding: 10px; border-radius: 8px;">
-                            ${playersHtml}
-                            ${chickenHtml}
+                            ${playersHtmlMain}
+                            ${chickenHtmlMain}
+                        </div>
+                    </div>
+                `;
+
+                // === PiP 창 격자 HTML 생성 (요구사항 2 적용) ===
+                let playersHtmlPip = team.players.map(p => `
+                    <div class="pip-player">
+                        <span>${p.name}</span>
+                        <span>${p.score} (${p.kills}-${p.deaths})</span>
+                    </div>
+                `).join('');
+
+                generatedHtmlPip += `
+                    <div class="pip-team">
+                        ${animOverlay}
+                        <div class="pip-team-head t${index % 4}">${team.score}점</div>
+                        <div style="flex-grow: 1; padding: 4px 0;">
+                            ${playersHtmlPip}
+                        </div>
+                        <div class="pip-footer">
+                            🍗+${team.chickenBonusTotal} / 🚫-0
                         </div>
                     </div>
                 `;
             });
 
-            board.innerHTML = generatedHtml;
+            // 1. 메인 화면 렌더링
+            board.innerHTML = generatedHtmlMain;
             document.getElementById('totalScoreDisp').innerText = `TOTAL ${totalMatchScore}`;
 
+            // 2. PiP 화면 렌더링
             if (pipWindow) {
                 const pipContent = pipWindow.document.getElementById('pipContent');
                 if (pipContent) {
-                    // 요구사항 2, 3: 종료 사유에 따른 PiP 창 메시지 출력
                     let endOverlay = "";
                     if (isGameFinished) {
                         const successClass = gameEndReason === "목표 점수 성공" ? "success" : "";
-                        endOverlay = `<div class="pip-end-msg ${successClass}">${gameEndReason}</div>`;
+                        // 종료 시간 등의 텍스트 추출하여 표시
+                        const timeOnly = clockText.split('/').map(t => t.trim()).join(' / ');
+                        endOverlay = `
+                            <div class="pip-end-msg ${successClass}">
+                                <span>[ ${timeOnly} ]</span>
+                                ${gameEndReason}
+                            </div>
+                        `;
                     }
 
                     pipContent.innerHTML = `
-                        <div style="text-align: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #333;">
-                            <h3 style="color: #f1c40f; margin: 0 0 5px 0;">PUBG 실시간 점수판</h3>
-                            <div style="font-size: 0.8rem; color: #ffcc00; margin-bottom: 5px;">${clockText}</div>
-                            <div style="font-size: 1.8rem; font-weight: 900; color: #f06414;">TOTAL ${totalMatchScore}</div>
+                        <div class="pip-container">
+                            <div class="pip-header">TOTAL ${totalMatchScore}점</div>
+                            <div class="pip-grid">
+                                ${generatedHtmlPip}
+                            </div>
                             ${endOverlay}
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 15px; padding: 10px;">${generatedHtml}</div>
                     `;
                 }
             }
