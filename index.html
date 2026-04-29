@@ -2,19 +2,17 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>코렛트 벽킬내기</title>
+    <title>코렛트 벽킬내기 점수판</title>
     <style>
         :root {
             --ow-orange: #f06414;
-            --bg-body: #121417;
-            --bg-panel: rgba(30, 33, 38, 0.9); /* 배경이 살짝 비치도록 수정 */
+            --bg-body: #493D84; /* 요구사항 1: 배경색 변경 */
+            --bg-panel: rgba(30, 33, 38, 0.9);
             --border-color: #383e47;
         }
         body { 
             font-family: 'Malgun Gothic', 'Pretendard', sans-serif; 
-            /* 전체 배경색 진한보라 + 연한보라 그라데이션 적용 */
-            background: linear-gradient(135deg, #704585, #CBB1D4);
-            background-attachment: fixed;
+            background-color: var(--bg-body); /* 요구사항 1: 배경색 변경 */
             min-height: 100vh;
             color: white; 
             padding: 20px; 
@@ -52,7 +50,6 @@
         .player-stats-name { font-weight: bold; color: #fff; }
         .player-stats-score { color: #f06414; font-weight: bold; }
         
-        /* 치킨 카운트 스타일 */
         .chicken-bonus-text { font-size: 0.9rem; color: #f1c40f; font-weight: bold; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #555; display: block; text-align: center; }
 
         .status { color: #00ff00; font-weight: bold; font-size: 1.2rem; }
@@ -114,7 +111,7 @@
                 </div>
                 <div class="config-row" style="margin-top: 10px; border-top: 1px solid #555; padding-top: 10px;">
                     <span style="font-size: 0.9rem; color: #ddd; font-weight: bold;"> 🍗 치킨 점수 설정:</span>
-                    <label>에/미/태/데/론/비: <input type="number" id="chickenA" value="20" style="width: 60px;" title="에란겔, 미라마, 태이고, 데스턴, 론도, 비켄디"></label>
+                    <label>에/미/태/데/론/비: <input type="number" id="chickenA" value="20" style="width: 60px;" title="에란겔, 미라마, 테이고, 데스턴, 론도, 비켄디"></label>
                     <label>사/카/파: <input type="number" id="chickenB" value="15" style="width: 60px;" title="사녹, 카라킨, 파라모"></label>
                 </div>
                 <button class="btn-start" onclick="startGame()">🚀 팀 확정 및 대회 시작</button>
@@ -150,6 +147,7 @@
         let config = {};
         let pollingTimer, clockTimer;
         let isGameFinished = false;
+        let gameEndReason = ""; // PiP 출력을 위한 종료 사유
         let msgTimeout;
         let pipWindow = null;
         let isFirstSync = true;
@@ -276,7 +274,7 @@
             document.getElementById('clock').innerText = "현재 시간: " + currentTimeStr + " / 종료 시간: " + config.endTime;
 
             if (currentTimeStr >= config.endTime) {
-                endGame(false);
+                endGame(false); // 요구사항 2: 시간 종료 처리
             }
             if (pipWindow) renderLiveScoreBoard();
         }
@@ -361,20 +359,30 @@
             checkTargetScore();
         }
 
+        // 요구사항 3: 목표점수를 TOTAL(전체 팀 합계) 기준으로 판단
         function checkTargetScore() {
-            const winner = teamsData.find(t => t.score >= config.targetScore);
-            if (winner) endGame(true, winner.name);
+            const total = teamsData.reduce((sum, t) => sum + t.score, 0);
+            if (total >= config.targetScore) {
+                endGame(true); // 성공 처리
+            }
         }
 
-        function endGame(isSuccess, winnerName = "") {
+        function endGame(isSuccess) {
             isGameFinished = true;
+            gameEndReason = isSuccess ? "목표 점수 성공" : "시간 종료"; // 요구사항 2, 3 메시지 설정
+            
             clearInterval(pollingTimer);
             clearInterval(clockTimer);
             clearTimeout(msgTimeout);
+            
             const msgEl = document.getElementById('systemMsg');
-            if (isSuccess) msgEl.innerHTML = `<span class="status">🎉 대회 종료! ${winnerName} 팀이 목표 점수를 달성했습니다!</span>`;
-            else msgEl.innerHTML = `<span class="failed">⏰ 시간 종료! 목표 점수에 도달한 팀이 없습니다.</span>`;
-            if (pipWindow) renderLiveScoreBoard();
+            if (isSuccess) {
+                msgEl.innerHTML = `<span class="status">🎉 성공! 목표 합계 점수를 달성했습니다!</span>`;
+            } else {
+                msgEl.innerHTML = `<span class="failed">⏰ 시간 종료! 목표 점수에 도달하지 못했습니다.</span>`;
+            }
+            
+            renderLiveScoreBoard(); // 최종 상태 렌더링 (PiP 포함)
         }
 
         async function openPipWindow() {
@@ -404,6 +412,8 @@
                 .pip-rank { font-size: 3.5rem; color: #f1c40f; font-weight: 900; text-shadow: 0 0 15px rgba(241, 196, 15, 0.6); margin-bottom: 5px; line-height: 1; }
                 .pip-diff { font-size: 2rem; color: #2ecc71; font-weight: bold; }
                 .live-team-card { position: relative; }
+                .pip-end-msg { font-size: 2.2rem; font-weight: 900; color: #ff3333; margin-top: 10px; text-shadow: 0 0 10px rgba(255, 51, 51, 0.5); }
+                .pip-end-msg.success { color: #00ff00; text-shadow: 0 0 10px rgba(0, 255, 0, 0.5); }
             `;
             pipWindow.document.head.appendChild(style);
 
@@ -473,11 +483,19 @@
             if (pipWindow) {
                 const pipContent = pipWindow.document.getElementById('pipContent');
                 if (pipContent) {
+                    // 요구사항 2, 3: 종료 사유에 따른 PiP 창 메시지 출력
+                    let endOverlay = "";
+                    if (isGameFinished) {
+                        const successClass = gameEndReason === "목표 점수 성공" ? "success" : "";
+                        endOverlay = `<div class="pip-end-msg ${successClass}">${gameEndReason}</div>`;
+                    }
+
                     pipContent.innerHTML = `
                         <div style="text-align: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #333;">
                             <h3 style="color: #f1c40f; margin: 0 0 5px 0;">PUBG 실시간 점수판</h3>
                             <div style="font-size: 0.8rem; color: #ffcc00; margin-bottom: 5px;">${clockText}</div>
                             <div style="font-size: 1.8rem; font-weight: 900; color: #f06414;">TOTAL ${totalMatchScore}</div>
+                            ${endOverlay}
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 15px; padding: 10px;">${generatedHtml}</div>
                     `;
