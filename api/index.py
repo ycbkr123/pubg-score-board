@@ -1,17 +1,17 @@
 <div class="box">
     <h3>4. 점수판 룰 설정</h3>
     <div class="config-row">
-        <label>킬 점수: <input type="number" id="killScore" value="10" style="width: 50px;"></label>
-        <label>데스 감점: <input type="number" id="deathPenalty" value="5" style="width: 50px;"></label>
+        <label>킬 점수: <input type="number" id="killScore" value="1" style="width: 50px;"></label>
+        <label>데스 감점: <input type="number" id="deathPenalty" value="1" style="width: 50px;"></label>
         <label>목표 점수: <input type="number" id="targetScore" value="100" style="width: 70px;"></label>
         <label>종료 시간: <input type="time" id="endTime"></label>
     </div>
     <div class="config-row" style="margin-top: 10px; border-top: 1px solid #333; padding-top: 10px;">
-        <span style="font-size: 0.9rem; color: #aaa;">🍗 치킨 점수 설정:</span>
+        <span style="font-size: 0.9rem; color: #aaa;">치킨 점수 설정:</span>
         <label>에/미/태/데/론/비: <input type="number" id="chickenA" value="20" style="width: 50px;" title="에란겔, 미라마, 테이고, 데스턴, 론도, 비켄디"></label>
         <label>사/카/파: <input type="number" id="chickenB" value="15" style="width: 50px;" title="사녹, 카라킨, 파라모"></label>
     </div>
-    <button class="btn-start" onclick="startGame()">🚀 팀 확정 및 대회 시작</button>
+    <button class="btn-start" onclick="startGame()">팀 확정 및 대회 시작</button>
 </div>
 
 <div class="box" id="matchSection" style="display:none;">
